@@ -37,9 +37,14 @@ M003,200.1234,380.2,45678.9,34567.8,39876.2
 Make sure you have the required database packages installed:
 
 ```r
-# Install from CRAN or GitHub as appropriate
-install.packages("featuremsea")
-install.packages("fmseadatabase")
+# Install required packages
+if (!requireNamespace("remotes", quietly = TRUE)) {
+  install.packages("remotes")
+}
+
+# Install from GitHub
+remotes::install_github("tidymass/featuremsea")
+remotes::install_github("tidymass/fmseadatabase")
 ```
 
 The application supports multiple databases:

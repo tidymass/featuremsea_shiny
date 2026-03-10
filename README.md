@@ -39,10 +39,24 @@ devtools::install_github("tidymass/featuremsea_shiny")
 The package requires the following core dependencies:
 
 - `featuremsea`: Core fMSEA algorithm implementation
-- `fmseadatabase`: Metabolite and pathway databases
+- `fmseadatabase`: Metabolite and pathway databases (install via GitHub)
 - `shiny`: Web application framework
 - `bslib`: Modern UI components
 - `DT`: Interactive data tables
+
+Install the required packages:
+
+```r
+# Install CRAN packages
+install.packages(c("shiny", "bslib", "DT", "shinyFiles", "bsicons", "ggplot2"))
+
+# Install GitHub packages
+if (!requireNamespace("remotes", quietly = TRUE)) {
+  install.packages("remotes")
+}
+remotes::install_github("tidymass/featuremsea")
+remotes::install_github("tidymass/fmseadatabase")
+```
 
 ## Usage
 

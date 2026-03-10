@@ -33,7 +33,11 @@ Imports:
 Suggests:
     knitr,
     rmarkdown,
-    testthat (>= 3.0.0)
+    testthat (>= 3.0.0),
+    remotes
 VignetteBuilder: knitr
+Remotes:
+    tidymass/featuremsea,
+    tidymass/fmseadatabase
 URL: https://github.com/tidymass/featuremsea_shiny
 BugReports: https://github.com/tidymass/featuremsea_shiny/issues
