@@ -12,11 +12,11 @@ fmsea_ui <- function(id) {
     icon = bsicons::bs_icon("diagram-3"),
     bslib::layout_sidebar(
       sidebar = bslib::accordion(
-        open = "Data Upload & Selection",
+        open = "Data Upload & Download",
 
-        # --- 1. Data Upload & Selection ---
+        # --- 1. Data Upload & Download ---
         bslib::accordion_panel(
-          title = "Data Upload & Selection",
+          title = "Data Upload & Download",
           icon = bsicons::bs_icon("upload"),
 
           # Feature Table Upload (支持 CSV/RDA)
@@ -44,28 +44,41 @@ fmsea_ui <- function(id) {
 
           hr(),
 
-          p("Existing Results:", style = "font-size: 0.85em; font-weight: bold; margin-bottom: 5px;"),
-          shinyFiles::shinyFilesButton(id = ns('results_rda_file'),
-                                       label = 'Load results.rda',
-                                       title = "Select RDA",
-                                       multiple = FALSE,
-                                       buttonType = "info"),
+          p("Result Management:", style = "font-size: 1.1em; font-weight: bold; margin-bottom: 5px;"),
+          div(style = "display: flex; gap: 5px; margin-bottom: 10px; flex-wrap: wrap;",
+              shinyFiles::shinyFilesButton(id = ns('results_rda_file'),
+                                           label = 'Load Result',
+                                           title = "Select RDA",
+                                           multiple = FALSE,
+                                           buttonType = "info",
+                                           icon = bsicons::bs_icon("upload"),
+                                           style = "font-size: 0.875rem; padding: 0.375rem 0.75rem; width: 140px;"),
+              downloadButton(ns("download_current_results"), "Save Result",
+                            class = "btn-success",
+                            style = "font-size: 0.875rem; padding: 0.375rem 0.75rem; width: 140px;"),
+              downloadButton(ns("download_all_data"),
+                            HTML(paste(as.character(bsicons::bs_icon("archive")), "Save All Data")),
+                            style = "background-color: #ff8c42; border-color: #ff8c42; color: white; font-size: 0.875rem; padding: 0.375rem 0.75rem; width: 140px;")
+          ),
           div(textOutput(ns("results_rda_path")),
-              style = "font-size: 0.75em; color: #666; margin-top: 5px; padding: 5px; background-color: #f8f9fa; border-radius: 3px;")
+              style = "font-size: 0.75em; color: #666; margin-top: 5px; margin-bottom: 10px; padding: 5px; background-color: #f8f9fa; border-radius: 3px;"),
+          div(textOutput(ns("current_results_status")),
+              style = "font-size: 0.75em; color: #666; padding: 5px; background-color: #e8f5e8; border-radius: 3px;")
         ),
 
         # --- 2. Step 1 Parameters ---
         bslib::accordion_panel(
-          title = "Step 1: Annotation",
+          title = "Step 1: Annotation and Filtering",
           icon = bsicons::bs_icon("1-circle"),
 
-          selectInput(ns("column"), "Column",
-                      choices = c("rp", "hilic"),
+          selectInput(ns("column"), "Chromatographic Column",
+                      choices = c("Reverse Phase (RP)" = "rp",
+                                 "Hydrophilic Interaction (HILIC)" = "hilic"),
                       selected = "rp"),
 
-          numericInput(ns("ms1_match_ppm"), "MS1 PPM", value = 15),
-          numericInput(ns("mfc_rt_tol"), "RT Tol (s)", value = 10),
-          numericInput(ns("isotope_number"), "Isotope No.", value = 3),
+          numericInput(ns("ms1_match_ppm"), "MS1 Mass Tolerance (PPM)", value = 15),
+          numericInput(ns("mfc_rt_tol"), "Retention Time Tolerance (seconds)", value = 10),
+          numericInput(ns("isotope_number"), "Maximum Isotope Number", value = 3),
 
           actionButton(ns("run_step1"), "Run Step 1",
                        class = "btn-primary",
@@ -78,15 +91,15 @@ fmsea_ui <- function(id) {
 
         # --- 3. Step 2 Parameters ---
         bslib::accordion_panel(
-          title = "Step 2: fMSEA",
+          title = "Step 2: fMSEA Analysis",
           icon = bsicons::bs_icon("2-circle"),
 
-          numericInput(ns("threads"), "Threads", value = 3, min = 1),
-          numericInput(ns("min_compounds"), "Min Compounds", value = 15),
-          numericInput(ns("max_compounds"), "Max Compounds", value = 300),
-          numericInput(ns("perm_num"), "Permutations", value = 1000),
-          numericInput(ns("max_iter_num"), "Max Iterations", value = 1, min = 1, max = 20),
-          numericInput(ns("fdr_thr"), "FDR Thr", value = 0.05),
+          numericInput(ns("threads"), "Number of Threads", value = 3, min = 1),
+          numericInput(ns("min_compounds"), "Min Compounds per Pathway", value = 15),
+          numericInput(ns("max_compounds"), "Max Compounds per Pathway", value = 300),
+          numericInput(ns("perm_num"), "Number of Permutations", value = 1000),
+          numericInput(ns("max_iter_num"), "Maximum Iterations", value = 1, min = 1, max = 20),
+          numericInput(ns("fdr_thr"), "FDR Threshold", value = 0.05),
 
           actionButton(ns("run_step2"), "Run Step 2",
                        class = "btn-primary",
@@ -101,17 +114,17 @@ fmsea_ui <- function(id) {
           div(
             style = "margin-bottom: 15px;",
             h6("Matrix Relevance Analysis", style = "color: #0066cc; margin-bottom: 8px;"),
-            textInput(ns("sample_source"), "Sample Source (e.g., urine, plasma, serum)",
-                      value = "urine", placeholder = "Enter sample source"),
+            textInput(ns("sample_source"), "Sample Source",
+                      value = "", placeholder = "e.g., urine, plasma, serum, tissue"),
             tags$small("Analyze pathway reliability in specific sample matrix",
                        style = "color: #666; font-style: italic;")
           ),
 
           div(
             style = "margin-bottom: 15px;",
-            h6("Literature Relevance Analysis", style = "color: #0066cc; margin-bottom: 8px;"),
-            textInput(ns("research_topic"), "Research Topic (e.g., cancer, diabetes)",
-                      value = "cancer", placeholder = "Enter research topic"),
+            h6("Topic Relevance Analysis", style = "color: #0066cc; margin-bottom: 8px;"),
+            textInput(ns("research_topic"), "Research Topic",
+                      value = "", placeholder = "e.g., cancer, diabetes, metabolism, aging"),
             tags$small("Analyze pathway relevance to research topic",
                        style = "color: #666; font-style: italic;")
           ),
@@ -125,13 +138,15 @@ fmsea_ui <- function(id) {
             passwordInput(ns("api_key"), "API Key",
                          placeholder = "Enter your API key"),
             tags$small("Your API key will be used securely and not stored",
-                       style = "color: #666; font-style: italic;")
+                       style = "color: #666; font-style: italic;"),
+            br(), br(),
+            uiOutput(ns("model_selection_ui"))
           ),
 
           div(
             style = "margin-bottom: 10px;",
             checkboxInput(ns("run_matrix_analysis"), "Run Matrix Relevance Analysis", value = TRUE),
-            checkboxInput(ns("run_literature_analysis"), "Run Literature Relevance Analysis", value = TRUE)
+            checkboxInput(ns("run_literature_analysis"), "Run Topic Relevance Analysis", value = TRUE)
           ),
 
           actionButton(ns("run_step3"), "Run LLM Evaluation",
@@ -162,7 +177,10 @@ fmsea_ui <- function(id) {
           div(
             style = "padding: 10px;",
             h6("Enrichment Plot"),
-            plotOutput(ns("fmsea_plot"), height = "400px"),
+            div(
+              style = "display: flex; justify-content: center;",
+              plotOutput(ns("fmsea_plot"), width = "1000px", height = "600px")
+            ),
             div(
               style = "display: flex; gap: 10px; margin-top: 5px;",
               downloadButton(ns("download_png"), "PNG", class = "btn-sm"),
@@ -170,24 +188,8 @@ fmsea_ui <- function(id) {
             )
           ),
 
-          # LLM Evaluation Results
-          conditionalPanel(
-            condition = "output.show_llm_results",
-            ns = ns,
-            div(
-              style = "padding: 10px; border-top: 1px solid #eee;",
-              div(class = "d-flex justify-content-between align-items-center",
-                  h6("LLM Evaluation Results"),
-                  downloadButton(ns("download_llm_results"), "Download LLM Results (CSV)",
-                                 class = "btn-sm btn-outline-primary")),
-              DT::dataTableOutput(ns("llm_results_table"))
-            )
-          ),
-          bslib::accordion(
-            open = FALSE,
-            bslib::accordion_panel("Detailed Summary",
-                            verbatimTextOutput(ns("result_summary")))
-          )
+          # 动态渲染的 Pathway LLM Evaluation 部分
+          uiOutput(ns("pathway_llm_evaluation_ui"))
         )
       )
     )
@@ -281,6 +283,35 @@ fmsea_server <- function(id, volumes) {
       }
     })
 
+    # --- 动态 Model Selection UI ---
+    output$model_selection_ui <- renderUI({
+      provider <- input$api_provider
+
+      if (is.null(provider)) {
+        return(NULL)
+      }
+
+      if (provider == "openai") {
+        default_model <- "gpt-4o"
+        examples <- "e.g., gpt-4o, gpt-4o-mini, gpt-4-turbo"
+      } else if (provider == "siliconflow") {
+        default_model <- "Qwen/Qwen3-32B"
+        examples <- "e.g., Qwen/Qwen3-32B, Qwen/Qwen2.5-32B-Instruct"
+      } else {
+        return(NULL)
+      }
+
+      div(
+        textInput(ns("model_name"), "Model for Confidence Scoring",
+                  value = default_model,
+                  placeholder = paste("Enter model name (", examples, ")")),
+        tags$small(
+          paste("Examples:", examples),
+          style = "color: #666; font-style: italic;"
+        )
+      )
+    })
+
     # --- 动态 Pathway Database UI ---
     output$pathway_database_ui <- renderUI({
       # 根据 MS1 database 选择来确定可用的 pathway database
@@ -337,9 +368,10 @@ fmsea_server <- function(id, volumes) {
       if (nrow(file_info) > 0) {
         full_path <- as.character(file_info$datapath)
         vals$results_rda_file_path <- full_path
-        vals$final_result <- load_rda_data(full_path)
+        loaded_result <- load_rda_data(full_path)
 
-        if (!is.null(vals$final_result)) {
+        if (!is.null(loaded_result)) {
+          vals$final_result <- loaded_result
           showNotification("Results loaded successfully!",
                            type = "message", duration = 3)
         }
@@ -348,10 +380,46 @@ fmsea_server <- function(id, volumes) {
 
     output$results_rda_path <- renderText({
       if (!is.null(vals$results_rda_file_path)) {
-        paste0("✓ ", get_relative_path(vals$results_rda_file_path))
+        paste0("✓ Loaded: ", get_relative_path(vals$results_rda_file_path))
       } else {
-        "No file selected"
+        "No file loaded"
       }
+    })
+
+    # --- Current Results Status ---
+    output$current_results_status <- renderText({
+      # 确定当前最新的结果对象
+      current_result <- NULL
+      if (!is.null(vals$llm_evaluated_result)) {
+        current_result <- vals$llm_evaluated_result
+        status_text <- "✓ Current: LLM-evaluated results"
+      } else if (!is.null(vals$final_result)) {
+        current_result <- vals$final_result
+        status_text <- "✓ Current: fMSEA results"
+      } else {
+        return("No analysis results available")
+      }
+
+      # 添加分析状态信息
+      analysis_info <- character()
+      if (vals$matrix_analysis_done) {
+        analysis_info <- c(analysis_info, "Matrix")
+      }
+      if (vals$literature_analysis_done) {
+        analysis_info <- c(analysis_info, "Topic")
+      }
+
+      if (length(analysis_info) > 0) {
+        status_text <- paste0(status_text, " (", paste(analysis_info, collapse = ", "), " analysis)")
+      }
+
+      # 添加pathway数量信息
+      if (!is.null(current_result) && !is.null(current_result@significant_modules)) {
+        n_pathways <- nrow(current_result@significant_modules)
+        status_text <- paste0(status_text, " - ", n_pathways, " pathways")
+      }
+
+      status_text
     })
 
     # --- Step 1 状态显示 ---
@@ -375,7 +443,7 @@ fmsea_server <- function(id, volumes) {
           status_text <- c(status_text, "Matrix relevance analysis completed")
         }
         if (vals$literature_analysis_done) {
-          status_text <- c(status_text, "Literature relevance analysis completed")
+          status_text <- c(status_text, "Topic relevance analysis completed")
         }
 
         if (length(status_text) > 0) {
@@ -390,11 +458,6 @@ fmsea_server <- function(id, volumes) {
       }
     })
 
-    # --- Show LLM Results Condition ---
-    output$show_llm_results <- reactive({
-      !is.null(vals$llm_evaluated_result)
-    })
-    outputOptions(output, "show_llm_results", suspendWhenHidden = FALSE)
 
     # --- Analysis: Step 1 (带模态对话框) ---
     observeEvent(input$run_step1, {
@@ -402,7 +465,7 @@ fmsea_server <- function(id, volumes) {
 
       # 显示模态对话框
       showModal(modalDialog(
-        title = "Running Step 1: Annotation",
+        title = "Running Step 1: Annotation and Filtering",
         div(
           style = "text-align: center; padding: 20px;",
           div(
@@ -606,7 +669,7 @@ fmsea_server <- function(id, volumes) {
       }
 
       # 检查 API key
-      if (is.null(input$api_key) || input$api_key == "") {
+      if (is.null(input$api_key) || trimws(input$api_key) == "") {
         showNotification("Please enter your API key", type = "warning", duration = 5)
         return()
       }
@@ -617,6 +680,24 @@ fmsea_server <- function(id, volumes) {
         return()
       }
 
+      # 验证Matrix Analysis输入
+      if (input$run_matrix_analysis) {
+        if (is.null(input$sample_source) || trimws(input$sample_source) == "") {
+          showNotification("Please enter a valid sample source for matrix relevance analysis",
+                           type = "warning", duration = 5)
+          return()
+        }
+      }
+
+      # 验证Topic Analysis输入
+      if (input$run_literature_analysis) {
+        if (is.null(input$research_topic) || trimws(input$research_topic) == "") {
+          showNotification("Please enter a valid research topic for topic relevance analysis",
+                           type = "warning", duration = 5)
+          return()
+        }
+      }
+
       # 保存参数
       local_api_key <- input$api_key
       local_provider <- input$api_provider
@@ -624,6 +705,13 @@ fmsea_server <- function(id, volumes) {
       local_research_topic <- input$research_topic
       local_run_matrix <- input$run_matrix_analysis
       local_run_literature <- input$run_literature_analysis
+
+      # 确定使用的模型
+      local_model <- trimws(input$model_name)
+      if (is.null(local_model) || local_model == "") {
+        showNotification("Please enter a model name", type = "warning", duration = 5)
+        return()
+      }
 
       # 显示模态对话框
       showModal(modalDialog(
@@ -648,55 +736,153 @@ fmsea_server <- function(id, volumes) {
         fade = FALSE
       ))
 
-      # 重置状态
-      vals$matrix_analysis_done <- FALSE
-      vals$literature_analysis_done <- FALSE
-      vals$llm_evaluated_result <- vals$final_result
+      # 确保有基础结果对象
+      if (is.null(vals$llm_evaluated_result)) {
+        vals$llm_evaluated_result <- vals$final_result
+      }
+
+      # 确定需要运行的分析
+      need_matrix <- local_run_matrix && !vals$matrix_analysis_done
+      need_literature <- local_run_literature && !vals$literature_analysis_done
+
+      # 确定需要移除的分析结果
+      remove_matrix <- !local_run_matrix && vals$matrix_analysis_done
+      remove_literature <- !local_run_literature && vals$literature_analysis_done
+
+      # 计算实际需要执行的步骤数
+      total_steps <- sum(c(need_matrix, need_literature))
+
+      # 如果有需要移除的列，直接处理
+      if (remove_matrix || remove_literature) {
+        current_modules <- vals$llm_evaluated_result@significant_modules
+
+        if (remove_matrix) {
+          # 移除Matrix相关列
+          matrix_cols <- c("matrix_relevance_score", "sample_source")
+          current_modules <- current_modules[, !names(current_modules) %in% matrix_cols, drop = FALSE]
+          vals$matrix_analysis_done <- FALSE
+          showNotification("Matrix relevance analysis results removed", type = "message", duration = 3)
+        }
+
+        if (remove_literature) {
+          # 移除Topic相关列
+          literature_cols <- c("literature_pmids_exact", "literature_pmids_fuzzy",
+                             "topic_confidence_score", "research_topic")
+          current_modules <- current_modules[, !names(current_modules) %in% literature_cols, drop = FALSE]
+          vals$literature_analysis_done <- FALSE
+          showNotification("Topic relevance analysis results removed", type = "message", duration = 3)
+        }
+
+        vals$llm_evaluated_result@significant_modules <- current_modules
+      }
+
+      # 如果没有新分析需要运行，直接完成
+      if (total_steps == 0) {
+        # 移除模态对话框
+        removeModal()
+
+        showNotification("Analysis configuration updated", type = "message", duration = 3)
+        return()
+      }
 
       withProgress(message = 'LLM Evaluation Progress', value = 0, {
 
         tryCatch({
-          total_steps <- sum(c(local_run_matrix, local_run_literature))
           current_step <- 0
 
           # Matrix Relevance Analysis
-          if (local_run_matrix) {
+          if (need_matrix) {
             current_step <- current_step + 1
-            incProgress(0.4, detail = paste("Matrix relevance analysis... (", current_step, "/", total_steps, ")"))
+            incProgress(0.4, detail = paste("Matrix relevance analysis with", local_model, "... (", current_step, "/", total_steps, ")"))
 
-            # Note: This function would need to be implemented in featuremsea package
-            # vals$llm_evaluated_result <- analyze_matrix_relevance(
-            #   results = vals$llm_evaluated_result,
-            #   sample_source = local_sample_source,
-            #   api_key = local_api_key,
-            #   provider = local_provider
-            # )
-            vals$matrix_analysis_done <- TRUE
+            tryCatch({
+              vals$llm_evaluated_result <- featuremsea::analyze_matrix_relevance(
+                results = vals$llm_evaluated_result,
+                sample_source = local_sample_source,
+                api_key = local_api_key,
+                provider = local_provider,
+                model = local_model
+              )
+              vals$matrix_analysis_done <- TRUE
 
-            showNotification(
-              paste("Matrix relevance analysis completed for", local_sample_source),
-              type = "message", duration = 3
-            )
+              showNotification(
+                paste("Matrix relevance analysis completed for", local_sample_source, "using", local_model),
+                type = "message", duration = 3
+              )
+
+            }, error = function(e) {
+              error_msg <- e$message
+
+              # 检查是否是模型相关错误
+              if (grepl("model|Model|404|not found|not supported|invalid", error_msg, ignore.case = TRUE)) {
+                model_error <- paste("Model '", local_model, "' is not supported by", local_provider, ". Error:", error_msg)
+                showNotification(model_error, type = "error", duration = 10)
+              } else {
+                showNotification(paste("Matrix relevance analysis failed:", error_msg), type = "error", duration = 10)
+              }
+
+              # 不设置matrix_analysis_done为TRUE，让用户可以修改参数重试
+            })
           }
 
-          # Literature Relevance Analysis
-          if (local_run_literature) {
+          # Topic Relevance Analysis
+          if (need_literature) {
             current_step <- current_step + 1
-            incProgress(0.4, detail = paste("Literature relevance analysis... (", current_step, "/", total_steps, ")"))
+            incProgress(0.4, detail = paste("Topic relevance analysis with", local_model, "... (", current_step, "/", total_steps, ")"))
 
-            # Note: This function would need to be implemented in featuremsea package
-            # vals$llm_evaluated_result <- analyze_literature_relevance(
-            #   results = vals$llm_evaluated_result,
-            #   research_topic = local_research_topic,
-            #   api_key = local_api_key,
-            #   provider = local_provider
-            # )
-            vals$literature_analysis_done <- TRUE
+            tryCatch({
+              vals$llm_evaluated_result <- featuremsea::analyze_topic_relevance(
+                results = vals$llm_evaluated_result,
+                research_topic = local_research_topic,
+                api_key = local_api_key,
+                provider = local_provider,
+                model = local_model
+              )
+              vals$literature_analysis_done <- TRUE
 
-            showNotification(
-              paste("Literature relevance analysis completed for", local_research_topic),
-              type = "message", duration = 3
+              showNotification(
+                paste("Topic relevance analysis completed for", local_research_topic, "using", local_model),
+                type = "message", duration = 3
+              )
+
+            }, error = function(e) {
+              error_msg <- e$message
+
+              # 检查是否是模型相关错误
+              if (grepl("model|Model|404|not found|not supported|invalid", error_msg, ignore.case = TRUE)) {
+                model_error <- paste("Model '", local_model, "' is not supported by", local_provider, ". Error:", error_msg)
+                showNotification(model_error, type = "error", duration = 10)
+              } else {
+                showNotification(paste("Topic relevance analysis failed:", error_msg), type = "error", duration = 10)
+              }
+
+              # 不设置literature_analysis_done为TRUE，让用户可以修改模型重试
+            })
+          }
+
+          # 重新排序列，确保Matrix相关列在前面
+          if (vals$matrix_analysis_done || vals$literature_analysis_done) {
+            current_modules <- vals$llm_evaluated_result@significant_modules
+
+            # 定义列的优先级顺序
+            priority_cols <- c("pathway_id", "pathway_name", "pathway_description")
+            matrix_cols <- c("matrix_relevance_score", "sample_source")
+            literature_cols <- c("literature_pmids_exact", "literature_pmids_fuzzy",
+                                "topic_confidence_score", "research_topic")
+
+            # 获取所有其他列
+            other_cols <- setdiff(names(current_modules),
+                                 c(priority_cols, matrix_cols, literature_cols))
+
+            # 重新排序列：所有原始列 + Matrix列 + Literature列
+            original_cols <- c(priority_cols, other_cols)
+            new_order <- c(
+              intersect(original_cols, names(current_modules)),
+              intersect(matrix_cols, names(current_modules)),
+              intersect(literature_cols, names(current_modules))
             )
+
+            vals$llm_evaluated_result@significant_modules <- current_modules[, new_order, drop = FALSE]
           }
 
           incProgress(0.2, detail = "Complete!")
@@ -723,9 +909,18 @@ fmsea_server <- function(id, volumes) {
 
     # --- Table & Plot Interaction ---
     output$sig_modules_table <- DT::renderDataTable({
-      req(vals$final_result)
+      # 优先显示LLM评估后的结果，否则显示基础结果
+      current_result <- NULL
+      if (!is.null(vals$llm_evaluated_result)) {
+        current_result <- vals$llm_evaluated_result
+      } else if (!is.null(vals$final_result)) {
+        current_result <- vals$final_result
+      } else {
+        return(NULL)
+      }
 
-      df <- vals$final_result@significant_modules
+      req(current_result)
+      df <- current_result@significant_modules
 
       DT::datatable(
         df,
@@ -752,25 +947,125 @@ fmsea_server <- function(id, volumes) {
     })
 
     current_plot <- reactive({
-      req(vals$final_result, input$sig_modules_table_rows_selected)
+      # 直接依赖于数据变量，确保在数据加载后重新渲染
+      vals$final_result
+      vals$llm_evaluated_result
+
+      # 使用当前最新的结果对象
+      current_result <- NULL
+      if (!is.null(vals$llm_evaluated_result)) {
+        current_result <- vals$llm_evaluated_result
+      } else if (!is.null(vals$final_result)) {
+        current_result <- vals$final_result
+      }
+
+      req(current_result, input$sig_modules_table_rows_selected)
 
       idx <- input$sig_modules_table_rows_selected
-      target_id <- vals$final_result@significant_modules$pathway_id[idx]
+      target_id <- current_result@significant_modules$pathway_id[idx]
 
-      featuremsea::plot_fmsea_plot(vals$final_result, target_id)
+      tryCatch({
+        # Ensure patchwork is loaded for ggplot operations
+        if (!requireNamespace("patchwork", quietly = TRUE)) {
+          stop("patchwork package is required for plot generation. Please install it with: install.packages('patchwork')")
+        }
+
+        # Load patchwork functions
+        library(patchwork)
+
+        plot_result <- featuremsea::plot_fmsea_plot(current_result, target_id)
+        return(plot_result)
+
+      }, error = function(e) {
+        # Create a simple error plot if plotting fails
+        ggplot2::ggplot() +
+          ggplot2::annotate("text", x = 0, y = 0,
+                           label = paste("Plot Error:", e$message),
+                           size = 5, color = "red") +
+          ggplot2::theme_minimal() +
+          ggplot2::theme(
+            axis.text = ggplot2::element_blank(),
+            axis.ticks = ggplot2::element_blank(),
+            panel.grid = ggplot2::element_blank()
+          ) +
+          ggplot2::labs(title = "Enrichment Plot Error")
+      })
     })
 
     output$fmsea_plot <- renderPlot({
       current_plot()
-    })
+    }, res = 120, width = 1000, height = 600)
+
+    # --- Download Current Results ---
+    output$download_current_results <- downloadHandler(
+      filename = function() {
+        # 生成文件名
+        timestamp <- format(Sys.time(), "%Y%m%d_%H%M%S")
+
+        # 确定分析类型
+        analysis_type <- "fMSEA"
+        if (vals$matrix_analysis_done || vals$literature_analysis_done) {
+          analysis_components <- character()
+          if (vals$matrix_analysis_done) analysis_components <- c(analysis_components, "Matrix")
+          if (vals$literature_analysis_done) analysis_components <- c(analysis_components, "Topic")
+          analysis_type <- paste0("fMSEA_", paste(analysis_components, collapse = "_"))
+        }
+
+        paste0("results_", analysis_type, "_", timestamp, ".rda")
+      },
+      content = function(file) {
+        # 确定要下载的结果对象
+        results_to_save <- NULL
+        if (!is.null(vals$llm_evaluated_result)) {
+          results_to_save <- vals$llm_evaluated_result
+        } else if (!is.null(vals$final_result)) {
+          results_to_save <- vals$final_result
+        }
+
+        if (is.null(results_to_save)) {
+          stop("No analysis results available for download")
+        }
+
+        # 保存结果对象
+        final_result <- results_to_save
+        save(final_result, file = file)
+
+        showNotification("Results saved successfully!", type = "message", duration = 3)
+      }
+    )
 
     # --- Download Handlers ---
     output$download_table <- downloadHandler(
       filename = function() {
-        paste0("fMSEA_Results_", Sys.Date(), ".csv")
+        # 根据结果类型生成文件名
+        if (!is.null(vals$llm_evaluated_result)) {
+          analysis_types <- character()
+          if (vals$matrix_analysis_done) analysis_types <- c(analysis_types, "Matrix")
+          if (vals$literature_analysis_done) analysis_types <- c(analysis_types, "Topic")
+
+          if (length(analysis_types) > 0) {
+            paste0("fMSEA_LLM_", paste(analysis_types, collapse = "_"), "_Results_", Sys.Date(), ".csv")
+          } else {
+            paste0("fMSEA_LLM_Results_", Sys.Date(), ".csv")
+          }
+        } else {
+          paste0("fMSEA_Results_", Sys.Date(), ".csv")
+        }
       },
       content = function(file) {
-        utils::write.csv(vals$final_result@significant_modules, file, row.names = FALSE)
+        # 下载当前显示的表格
+        current_result <- NULL
+        if (!is.null(vals$llm_evaluated_result)) {
+          current_result <- vals$llm_evaluated_result
+        } else if (!is.null(vals$final_result)) {
+          current_result <- vals$final_result
+        }
+
+        if (is.null(current_result)) {
+          stop("No results available for download")
+        }
+
+        utils::write.csv(current_result@significant_modules, file, row.names = FALSE)
       }
     )
 
@@ -794,57 +1089,206 @@ fmsea_server <- function(id, volumes) {
       }
     )
 
-    output$result_summary <- renderPrint({
-      req(vals$final_result)
-      print(vals$final_result)
+    # --- Download All Data ---
+    output$download_all_data <- downloadHandler(
+      filename = function() {
+        timestamp <- format(Sys.time(), "%Y%m%d_%H%M%S")
+        analysis_type <- "fMSEA"
+        if (vals$matrix_analysis_done || vals$literature_analysis_done) {
+          analysis_components <- character()
+          if (vals$matrix_analysis_done) analysis_components <- c(analysis_components, "Matrix")
+          if (vals$literature_analysis_done) analysis_components <- c(analysis_components, "Topic")
+          analysis_type <- paste0("fMSEA_", paste(analysis_components, collapse = "_"))
+        }
+        paste0("fMSEA_AllData_", analysis_type, "_", timestamp, ".zip")
+      },
+      content = function(file) {
+        # 确定要保存的结果对象
+        current_result <- NULL
+        if (!is.null(vals$llm_evaluated_result)) {
+          current_result <- vals$llm_evaluated_result
+        } else if (!is.null(vals$final_result)) {
+          current_result <- vals$final_result
+        }
+
+        if (is.null(current_result)) {
+          stop("No analysis results available for download")
+        }
+
+        # 创建临时目录
+        temp_dir <- tempdir()
+        data_dir <- file.path(temp_dir, "fMSEA_AllData")
+        if (dir.exists(data_dir)) unlink(data_dir, recursive = TRUE)
+        dir.create(data_dir, recursive = TRUE)
+
+        # 创建 Enrichment Plots 子文件夹
+        plots_dir <- file.path(data_dir, "Enrichment_Plots")
+        dir.create(plots_dir, recursive = TRUE)
+
+        tryCatch({
+          # 1. 保存结果对象 (.rda文件)
+          final_result <- current_result
+          rda_file <- file.path(data_dir, "analysis_results.rda")
+          save(final_result, file = rda_file)
+
+          # 2. 保存显著模块表 (.csv文件)
+          csv_file <- file.path(data_dir, "significant_modules.csv")
+          utils::write.csv(current_result@significant_modules, csv_file, row.names = FALSE)
+
+          # 3. 生成所有显著通路的富集图 (PDF文件)
+          pathway_ids <- current_result@significant_modules$pathway_id
+
+          # 确保patchwork包可用
+          if (!requireNamespace("patchwork", quietly = TRUE)) {
+            stop("patchwork package is required for plot generation. Please install it with: install.packages('patchwork')")
+          }
+          library(patchwork)
+
+          withProgress(message = "Generating enrichment plots...", value = 0, {
+            for (i in seq_along(pathway_ids)) {
+              pathway_id <- pathway_ids[i]
+              pathway_name <- current_result@significant_modules$pathway_name[i]
+
+              # 生成安全的文件名（移除特殊字符）
+              safe_name <- gsub("[^A-Za-z0-9_-]", "_", pathway_name)
+              if (nchar(safe_name) > 100) {
+                safe_name <- substr(safe_name, 1, 100)
+              }
+
+              plot_file <- file.path(plots_dir, paste0(i, "_", safe_name, ".pdf"))
+
+              tryCatch({
+                plot_result <- featuremsea::plot_fmsea_plot(current_result, pathway_id)
+                ggplot2::ggsave(plot_file, plot = plot_result,
+                               device = "pdf", width = 10, height = 8)
+              }, error = function(e) {
+                # 如果单个图生成失败，创建一个错误信息图
+                error_plot <- ggplot2::ggplot() +
+                  ggplot2::annotate("text", x = 0, y = 0,
+                                   label = paste("Plot generation failed for:", pathway_name, "\nError:", e$message),
+                                   size = 4, color = "red") +
+                  ggplot2::theme_minimal() +
+                  ggplot2::labs(title = paste("Error:", pathway_name))
+                ggplot2::ggsave(plot_file, plot = error_plot,
+                               device = "pdf", width = 8, height = 6)
+              })
+
+              incProgress(1/length(pathway_ids))
+            }
+          })
+
+          # 4. 创建zip文件
+          current_dir <- getwd()
+          setwd(temp_dir)
+          utils::zip(file, "fMSEA_AllData", flags = "-r")
+          setwd(current_dir)
+
+          showNotification("All data packaged successfully!", type = "message", duration = 3)
+
+        }, error = function(e) {
+          showNotification(paste("Error creating data package:", e$message), type = "error", duration = 10)
+        }, finally = {
+          # 清理临时文件
+          if (dir.exists(data_dir)) {
+            unlink(data_dir, recursive = TRUE)
+          }
+        })
+      }
+    )
+
+    # --- Result Summary ---
+    output$pathway_summary <- renderText({
+      # 获取当前最新的结果对象
+      current_result <- NULL
+      has_llm_evaluation <- !is.null(vals$llm_evaluated_result)
+
+      if (has_llm_evaluation) {
+        current_result <- vals$llm_evaluated_result
+      } else if (!is.null(vals$final_result)) {
+        current_result <- vals$final_result
+      }
+
+      # 检查是否有选中的pathway
+      if (is.null(current_result) || is.null(input$sig_modules_table_rows_selected)) {
+        if (has_llm_evaluation) {
+          return("Please select a pathway from the table above to view its LLM evaluation details.")
+        } else {
+          return("Please select a pathway from the table above to view its details.")
+        }
+      }
+
+      idx <- input$sig_modules_table_rows_selected
+      pathway_data <- current_result@significant_modules[idx, ]
+
+      # 根据是否进行了LLM评估来定义要显示的字段
+      if (has_llm_evaluation) {
+        # 显示完整的LLM评估字段
+        fields <- c(
+          "pathway_name" = "Pathway Name",
+          "matrix_source" = "Matrix Source",
+          "matrix_confidence_score" = "Matrix Confidence Score",
+          "matrix_confidence_reason" = "Matrix Confidence Reason",
+          "research_topic" = "Research Topic",
+          "literature_pmids_exact" = "Literature PMIDs (Exact)",
+          "literature_pmids_fuzzy" = "Literature PMIDs (Fuzzy)",
+          "topic_confidence_score" = "Topic Confidence Score"
+        )
+      } else {
+        # 只显示基础字段，不包含LLM相关字段
+        fields <- c(
+          "pathway_name" = "Pathway Name",
+          "NES" = "Normalized Enrichment Score",
+          "pval" = "P-value",
+          "padj" = "Adjusted P-value",
+          "size" = "Pathway Size",
+          "leadingEdge" = "Leading Edge"
+        )
+      }
+
+      # 构建显示文本
+      output_lines <- character()
+      for (field_name in names(fields)) {
+        field_label <- fields[[field_name]]
+        if (field_name %in% names(pathway_data)) {
+          field_value <- pathway_data[[field_name]]
+          if (is.na(field_value) || is.null(field_value) || field_value == "") {
+            field_value <- "NA"
+          }
+        } else {
+          field_value <- "NA"
+        }
+        output_lines <- c(output_lines, paste0(field_label, ": ", field_value))
+      }
+
+      return(paste(output_lines, collapse = "\n"))
     })
 
-    # --- LLM Results Table ---
-    output$llm_results_table <- DT::renderDataTable({
-      req(vals$llm_evaluated_result)
+    # --- 动态渲染 Pathway LLM Evaluation UI ---
+    output$pathway_llm_evaluation_ui <- renderUI({
+      # 检查是否有LLM评估结果
+      has_llm_evaluation <- !is.null(vals$llm_evaluated_result)
 
-      df <- vals$llm_evaluated_result@significant_modules
-
-      DT::datatable(
-        df,
-        selection = 'none',
-        rownames = FALSE,
-        options = list(
-          scrollX = TRUE,
-          scrollY = "300px",
-          pageLength = 10,
-          dom = 'frtip',
-          columnDefs = list(
-            list(
-              targets = "_all",
-              render = DT::JS(
-                "function(data, type, row, meta) {
-                  return type === 'display' && data !== null && data.length > 30 ?
-                    '' + data.substr(0, 30) + '...' : data;
-                }"
-              )
+      if (has_llm_evaluation) {
+        # 如果有LLM评估，显示accordion并展开
+        bslib::accordion(
+          open = TRUE,
+          bslib::accordion_panel(
+            "Pathway LLM Evaluation",
+            div(
+              div(class = "d-flex justify-content-end mb-2",
+                  actionButton(ns("copy_pathway_summary"), "Copy",
+                               class = "btn-sm btn-outline-secondary",
+                               onclick = "navigator.clipboard.writeText(document.getElementById('pathway_summary_text').innerText);")),
+              div(id = "pathway_summary_text",
+                  verbatimTextOutput(ns("pathway_summary")))
             )
           )
         )
-      ) %>%
-      DT::formatStyle(
-        columns = colnames(df),
-        fontSize = '12px'
-      )
+      } else {
+        # 如果没有LLM评估，返回NULL（不显示任何内容）
+        NULL
+      }
     })
 
-    # --- Download LLM Results ---
-    output$download_llm_results <- downloadHandler(
-      filename = function() {
-        analysis_types <- character()
-        if (vals$matrix_analysis_done) analysis_types <- c(analysis_types, "matrix")
-        if (vals$literature_analysis_done) analysis_types <- c(analysis_types, "literature")
-
-        paste0("fMSEA_LLM_Results_", paste(analysis_types, collapse = "_"), "_", Sys.Date(), ".csv")
-      },
-      content = function(file) {
-        utils::write.csv(vals$llm_evaluated_result@significant_modules, file, row.names = FALSE)
-      }
-    )
   })
 }

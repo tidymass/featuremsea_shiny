@@ -114,7 +114,7 @@ run_featuremsea_app <- function(...) {
                   br(),
 
                   div(class = "text-center",
-                    bslib::input_action_button(
+                    shiny::actionButton(
                       "start_analysis",
                       "Start Analysis",
                       class = "btn-primary btn-lg",

@@ -14,7 +14,7 @@ Description: A Shiny application for performing feature-based metabolite set
 License: MIT + file LICENSE
 Encoding: UTF-8
 LazyData: true
-RoxygenNote: 7.3.1
+RoxygenNote: 7.3.3
 Depends:
     R (>= 4.0.0)
 Imports:
@@ -29,7 +29,8 @@ Imports:
     htmltools,
     tools,
     utils,
-    fs
+    fs,
+    patchwork
 Suggests:
     knitr,
     rmarkdown,

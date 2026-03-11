@@ -48,7 +48,7 @@ Install the required packages:
 
 ```r
 # Install CRAN packages
-install.packages(c("shiny", "bslib", "DT", "shinyFiles", "bsicons", "ggplot2"))
+install.packages(c("shiny", "bslib", "DT", "shinyFiles", "bsicons", "ggplot2", "patchwork", "fs"))
 
 # Install GitHub packages
 if (!requireNamespace("remotes", quietly = TRUE)) {
