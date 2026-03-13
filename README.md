@@ -31,7 +31,7 @@ if (!requireNamespace("devtools", quietly = TRUE)) {
 }
 
 # Install featuremseashiny
-devtools::install_github("tidymass/featuremsea_shiny")
+remotes::install_github("tidymass/featuremsea_shiny")
 ```
 
 ### Dependencies
