@@ -13,26 +13,7 @@
 #' run_featuremsea_app()
 #' }
 run_featuremsea_app <- function(...) {
-  # Define available volumes for file selection
-  volumes <- c(
-    "Home" = fs::path_home(),
-    "Working Directory" = getwd()
-  )
-
-  # Add additional common directories if they exist
-  if (.Platform$OS.type == "unix") {
-    if (dir.exists("/Users")) {
-      volumes <- c(volumes, "Users" = "/Users")
-    }
-    if (dir.exists("/Volumes")) {
-      volumes <- c(volumes, "Volumes" = "/Volumes")
-    }
-  } else if (.Platform$OS.type == "windows") {
-    drives <- paste0(LETTERS[1:6], ":")
-    existing_drives <- drives[file.exists(drives)]
-    names(existing_drives) <- paste("Drive", existing_drives)
-    volumes <- c(volumes, existing_drives)
-  }
+  # File upload is now handled by fileInput() - no need for volumes
 
   # Create the UI
   ui <- bslib::page_navbar(
@@ -227,7 +208,7 @@ run_featuremsea_app <- function(...) {
 
   # Create the server
   server <- function(input, output, session) {
-    fmsea_server("fmsea", volumes = volumes)
+    fmsea_server("fmsea")
   }
 
   # Create and run the app

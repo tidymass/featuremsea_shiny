@@ -1,7 +1,7 @@
 #' Feature-based Metabolite Set Enrichment Analysis (fMSEA) Module
 #' @import shiny
 #' @importFrom DT dataTableOutput renderDataTable datatable formatStyle
-#' @importFrom shinyFiles shinyFilesButton parseFilePaths shinyFileChoose
+# Removed shinyFiles imports - using fileInput instead for web deployment
 #' @importFrom bsicons bs_icon
 #' @importFrom ggplot2 ggsave
 #' @noRd
@@ -21,11 +21,10 @@ fmsea_ui <- function(id) {
 
           # Feature Table Upload (支持 CSV/RDA)
           h6("Feature Table", style = "font-weight: bold; color: #333; margin-bottom: 8px;"),
-          shinyFiles::shinyFilesButton(id = ns('feature_table_file'),
-                                       label = 'Select Feature Table (CSV/RDA)',
-                                       title = "Select CSV or RDA file",
-                                       multiple = FALSE,
-                                       buttonType = "default"),
+          fileInput(ns('feature_table_file'),
+                    label = '',
+                    accept = c(".csv", ".rda", ".RData"),
+                    placeholder = "Select Feature Table (CSV/RDA)"),
           div(textOutput(ns("feature_table_path")),
               style = "font-size: 0.75em; color: #666; margin-top: 5px; margin-bottom: 15px; padding: 5px; background-color: #f8f9fa; border-radius: 3px;"),
 
@@ -45,14 +44,13 @@ fmsea_ui <- function(id) {
           hr(),
 
           p("Result Management:", style = "font-size: 1.1em; font-weight: bold; margin-bottom: 5px;"),
+          div(style = "margin-bottom: 10px;",
+              fileInput(ns('results_rda_file'),
+                        label = 'Load Result (RDA)',
+                        accept = c(".rda", ".RData"),
+                        width = "100%")),
+
           div(style = "display: flex; gap: 5px; margin-bottom: 10px; flex-wrap: wrap;",
-              shinyFiles::shinyFilesButton(id = ns('results_rda_file'),
-                                           label = 'Load Result',
-                                           title = "Select RDA",
-                                           multiple = FALSE,
-                                           buttonType = "info",
-                                           icon = bsicons::bs_icon("upload"),
-                                           style = "font-size: 0.875rem; padding: 0.375rem 0.75rem; width: 140px;"),
               downloadButton(ns("download_current_results"), "Save Result",
                             class = "btn-success",
                             style = "font-size: 0.875rem; padding: 0.375rem 0.75rem; width: 140px;"),
@@ -198,7 +196,7 @@ fmsea_ui <- function(id) {
 
 #' fMSEA Server
 #' @noRd
-fmsea_server <- function(id, volumes) {
+fmsea_server <- function(id) {
   moduleServer(id, function(input, output, session) {
     ns <- session$ns
 
@@ -258,14 +256,13 @@ fmsea_server <- function(id, volumes) {
 
     # --- Feature Table File Handler ---
     observe({
-      shinyFiles::shinyFileChoose(input, "feature_table_file",
-                                  roots = volumes, session = session)
       req(input$feature_table_file)
 
-      file_info <- shinyFiles::parseFilePaths(volumes, input$feature_table_file)
-      if (nrow(file_info) > 0) {
-        full_path <- as.character(file_info$datapath)
-        vals$feature_table_file_path <- full_path
+      file_info <- input$feature_table_file
+      if (!is.null(file_info)) {
+        # Use the temporary file path provided by fileInput
+        full_path <- file_info$datapath
+        vals$feature_table_file_path <- file_info$name  # Store original filename for display
         vals$feature_table <- load_feature_table(full_path)
 
         if (!is.null(vals$feature_table)) {
@@ -360,14 +357,13 @@ fmsea_server <- function(id, volumes) {
 
     # --- Results RDA File Handler ---
     observe({
-      shinyFiles::shinyFileChoose(input, "results_rda_file",
-                                  roots = volumes, session = session)
       req(input$results_rda_file)
 
-      file_info <- shinyFiles::parseFilePaths(volumes, input$results_rda_file)
-      if (nrow(file_info) > 0) {
-        full_path <- as.character(file_info$datapath)
-        vals$results_rda_file_path <- full_path
+      file_info <- input$results_rda_file
+      if (!is.null(file_info)) {
+        # Use the temporary file path provided by fileInput
+        full_path <- file_info$datapath
+        vals$results_rda_file_path <- file_info$name  # Store original filename for display
         loaded_result <- load_rda_data(full_path)
 
         if (!is.null(loaded_result)) {
