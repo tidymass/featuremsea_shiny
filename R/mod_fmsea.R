@@ -26,7 +26,24 @@ fmsea_ui <- function(id) {
                     accept = c(".csv", ".rda", ".RData"),
                     placeholder = "Select Feature Table (CSV/RDA)"),
           div(textOutput(ns("feature_table_path")),
-              style = "font-size: 0.75em; color: #666; margin-top: 5px; margin-bottom: 15px; padding: 5px; background-color: #f8f9fa; border-radius: 3px;"),
+              style = "font-size: 0.75em; color: #666; margin-top: 5px; margin-bottom: 10px; padding: 5px; background-color: #f8f9fa; border-radius: 3px;"),
+
+          # Demo Data Section
+          div(style = "margin-bottom: 15px;",
+              p("Or use demo data:", style = "font-size: 0.9em; font-weight: bold; margin-bottom: 8px; color: #6c757d;"),
+              div(style = "display: flex; gap: 5px; flex-wrap: wrap; align-items: center;",
+                  actionButton(ns("load_demo_data"),
+                              HTML(paste(as.character(bsicons::bs_icon("database")), "Load Demo Data")),
+                              class = "btn-info btn-sm",
+                              style = "font-size: 0.8rem; padding: 0.3rem 0.6rem;"),
+                  downloadButton(ns("download_demo_csv"), "CSV",
+                               class = "btn-outline-secondary btn-sm",
+                               style = "font-size: 0.8rem; padding: 0.3rem 0.6rem;"),
+                  downloadButton(ns("download_demo_rda"), "RDA",
+                               class = "btn-outline-secondary btn-sm",
+                               style = "font-size: 0.8rem; padding: 0.3rem 0.6rem;")
+              )
+          ),
 
           # MS1 Database Selection
           h6("MS1 Database", style = "font-weight: bold; color: #333; margin-bottom: 8px;"),
@@ -279,6 +296,68 @@ fmsea_server <- function(id) {
         "No file selected"
       }
     })
+
+    # --- Demo Data Handlers ---
+    observeEvent(input$load_demo_data, {
+      demo_path <- system.file("demo_data", "feature_table.rda", package = "featuremseashiny")
+
+      # Fallback to local path if package install path doesn't work
+      if (!file.exists(demo_path)) {
+        demo_path <- file.path("demo_data", "feature_table.rda")
+      }
+
+      if (file.exists(demo_path)) {
+        vals$feature_table <- load_feature_table(demo_path)
+        vals$feature_table_file_path <- "demo_data/feature_table.rda"
+
+        if (!is.null(vals$feature_table)) {
+          showNotification("Demo data loaded successfully!",
+                           type = "message", duration = 3)
+        } else {
+          showNotification("Failed to load demo data",
+                           type = "error", duration = 3)
+        }
+      } else {
+        showNotification("Demo data file not found",
+                         type = "error", duration = 3)
+      }
+    })
+
+    output$download_demo_csv <- downloadHandler(
+      filename = "demo_feature_table.csv",
+      content = function(file) {
+        demo_path <- system.file("demo_data", "feature_table.csv", package = "featuremseashiny")
+
+        # Fallback to local path
+        if (!file.exists(demo_path)) {
+          demo_path <- file.path("demo_data", "feature_table.csv")
+        }
+
+        if (file.exists(demo_path)) {
+          file.copy(demo_path, file)
+        } else {
+          stop("Demo CSV file not found")
+        }
+      }
+    )
+
+    output$download_demo_rda <- downloadHandler(
+      filename = "demo_feature_table.rda",
+      content = function(file) {
+        demo_path <- system.file("demo_data", "feature_table.rda", package = "featuremseashiny")
+
+        # Fallback to local path
+        if (!file.exists(demo_path)) {
+          demo_path <- file.path("demo_data", "feature_table.rda")
+        }
+
+        if (file.exists(demo_path)) {
+          file.copy(demo_path, file)
+        } else {
+          stop("Demo RDA file not found")
+        }
+      }
+    )
 
     # --- 动态 Model Selection UI ---
     output$model_selection_ui <- renderUI({
