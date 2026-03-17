@@ -3,7 +3,7 @@ importFrom(shiny, shinyApp, moduleServer, NS, reactive, reactiveValues, observe,
            withProgress, incProgress, showModal, removeModal, modalDialog, showNotification,
            renderText, renderUI, renderPlot, renderPrint, uiOutput, textOutput, plotOutput,
            verbatimTextOutput, conditionalPanel, outputOptions, downloadHandler, downloadButton,
-           selectInput, numericInput, textInput, passwordInput, checkboxInput, actionButton,
+           selectInput, numericInput, textInput, passwordInput, checkboxInput, actionButton, fileInput,
            h1, h2, h4, h5, h6, p, div, br, hr, tags, span, icon, HTML)
 import(bslib)
 importFrom(DT, dataTableOutput)
