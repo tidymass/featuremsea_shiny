@@ -67,6 +67,15 @@ fmsea_ui <- function(id) {
                         accept = c(".rda", ".RData"),
                         width = "100%")),
 
+          # Demo Result Section
+          div(style = "margin-bottom: 15px;",
+              p("Or use demo result:", style = "font-size: 0.9em; font-weight: bold; margin-bottom: 8px; color: #6c757d;"),
+              actionButton(ns("load_demo_result"),
+                          HTML(paste(as.character(bsicons::bs_icon("clipboard-data")), "Load Demo Result")),
+                          class = "btn-info btn-sm",
+                          style = "font-size: 0.8rem; padding: 0.3rem 0.6rem;")
+          ),
+
           div(style = "display: flex; gap: 5px; margin-bottom: 10px; flex-wrap: wrap;",
               downloadButton(ns("download_current_results"), "Save Result",
                             class = "btn-success",
@@ -460,6 +469,34 @@ fmsea_server <- function(id) {
         "No file loaded"
       }
     })
+
+    # --- Demo Result Handlers ---
+    observeEvent(input$load_demo_result, {
+      demo_path <- system.file("demo_result", "results.rda", package = "featuremseashiny")
+
+      # Fallback to local path if package install path doesn't work
+      if (!file.exists(demo_path)) {
+        demo_path <- file.path("demo_result", "results.rda")
+      }
+
+      if (file.exists(demo_path)) {
+        loaded_result <- load_rda_data(demo_path)
+        vals$results_rda_file_path <- "demo_result/results.rda"
+
+        if (!is.null(loaded_result)) {
+          vals$final_result <- loaded_result
+          showNotification("Demo result loaded successfully!",
+                           type = "message", duration = 3)
+        } else {
+          showNotification("Failed to load demo result",
+                           type = "error", duration = 3)
+        }
+      } else {
+        showNotification("Demo result file not found",
+                         type = "error", duration = 3)
+      }
+    })
+
 
     # --- Current Results Status ---
     output$current_results_status <- renderText({
