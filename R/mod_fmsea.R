@@ -472,6 +472,16 @@ fmsea_server <- function(id) {
           vals$final_result <- loaded_result
           # Generate leading edge scores table
           tryCatch({
+            # 检查函数是否存在
+            if (!exists("get_leading_edge_scores", where = asNamespace("featuremsea"))) {
+              stop("Function get_leading_edge_scores not found in featuremsea package")
+            }
+
+            # 检查result对象
+            if (!inherits(loaded_result, "featuremsea_object")) {
+              stop(paste("Invalid result object type:", class(loaded_result)))
+            }
+
             # 尝试检测数据库类型，优先尝试KEGG，然后尝试HMDB
             leading_edge_result <- NULL
 
@@ -489,7 +499,11 @@ fmsea_server <- function(id) {
 
             vals$leading_edge_table <- leading_edge_result
           }, error = function(e) {
-            vals$leading_edge_table <- NULL
+            vals$leading_edge_table <- data.frame(
+              Error = "Generation Failed",
+              Details = as.character(e$message),
+              stringsAsFactors = FALSE
+            )
             showNotification(paste("Warning: Could not generate annotation table:", e$message),
                            type = "warning", duration = 5)
           })
@@ -524,6 +538,16 @@ fmsea_server <- function(id) {
           vals$final_result <- loaded_result
           # Generate leading edge scores table
           tryCatch({
+            # 检查函数是否存在
+            if (!exists("get_leading_edge_scores", where = asNamespace("featuremsea"))) {
+              stop("Function get_leading_edge_scores not found in featuremsea package")
+            }
+
+            # 检查result对象
+            if (!inherits(loaded_result, "featuremsea_object")) {
+              stop(paste("Invalid result object type:", class(loaded_result)))
+            }
+
             # 尝试检测数据库类型，优先尝试KEGG，然后尝试HMDB
             leading_edge_result <- NULL
 
@@ -541,7 +565,11 @@ fmsea_server <- function(id) {
 
             vals$leading_edge_table <- leading_edge_result
           }, error = function(e) {
-            vals$leading_edge_table <- NULL
+            vals$leading_edge_table <- data.frame(
+              Error = "Generation Failed",
+              Details = as.character(e$message),
+              stringsAsFactors = FALSE
+            )
             showNotification(paste("Warning: Could not generate annotation table:", e$message),
                            type = "warning", duration = 5)
           })
@@ -809,11 +837,25 @@ fmsea_server <- function(id) {
 
           # Generate leading edge scores table
           tryCatch({
+            # 检查函数是否存在
+            if (!exists("get_leading_edge_scores", where = asNamespace("featuremsea"))) {
+              stop("Function get_leading_edge_scores not found in featuremsea package")
+            }
+
+            # 检查result对象
+            if (!inherits(vals$final_result, "featuremsea_object")) {
+              stop(paste("Invalid result object type:", class(vals$final_result)))
+            }
+
             # 使用分析时确定的数据库类型
             id_col_to_use <- ifelse(l_db_type == "KEGG", "KEGG_ID", "HMDB_ID")
             vals$leading_edge_table <- featuremsea::get_leading_edge_scores(vals$final_result, id_col = id_col_to_use)
           }, error = function(e) {
-            vals$leading_edge_table <- NULL
+            vals$leading_edge_table <- data.frame(
+              Error = "Generation Failed",
+              Details = as.character(e$message),
+              stringsAsFactors = FALSE
+            )
             showNotification(paste("Warning: Could not generate annotation table:", e$message),
                            type = "warning", duration = 5)
           })
@@ -1131,30 +1173,70 @@ fmsea_server <- function(id) {
 
     # --- Leading Edge Annotation Table Output ---
     output$leading_edge_annotation_table <- DT::renderDataTable({
-      req(vals$leading_edge_table)
+      tryCatch({
+        # 检查数据是否存在
+        if (is.null(vals$leading_edge_table)) {
+          return(DT::datatable(
+            data.frame(
+              Status = "No Data",
+              Message = "No annotation table available. Please upload results or run analysis first."
+            ),
+            options = list(dom = 't'),
+            rownames = FALSE
+          ))
+        }
 
-      DT::datatable(
-        vals$leading_edge_table,
-        rownames = FALSE,
-        options = list(
-          scrollX = TRUE,
-          scrollY = "400px",
-          pageLength = 10,
-          dom = 'frtip',
-          columnDefs = list(
-            list(
-              targets = "_all",
-              render = DT::JS(
-                "function(data, type, row, meta) {
-                  return type === 'display' && data !== null && data.length > 50 ?
-                    '' + data.substr(0, 50) + '...' : data;
-                }"
+        # 检查数据是否为空
+        if (!is.data.frame(vals$leading_edge_table) || nrow(vals$leading_edge_table) == 0) {
+          return(DT::datatable(
+            data.frame(
+              Status = "Empty Data",
+              Message = "Annotation table is empty or invalid."
+            ),
+            options = list(dom = 't'),
+            rownames = FALSE
+          ))
+        }
+
+        # 正常渲染表格
+        DT::datatable(
+          vals$leading_edge_table,
+          rownames = FALSE,
+          options = list(
+            scrollX = TRUE,
+            scrollY = "400px",
+            pageLength = 10,
+            dom = 'frtip',
+            columnDefs = list(
+              list(
+                targets = "_all",
+                render = DT::JS(
+                  "function(data, type, row, meta) {
+                    return type === 'display' && data !== null && data.length > 50 ?
+                      '' + data.substr(0, 50) + '...' : data;
+                  }"
+                )
               )
             )
           )
+        ) %>%
+          DT::formatStyle(columns = colnames(vals$leading_edge_table), fontSize = '12px')
+
+      }, error = function(e) {
+        # 显示具体错误信息
+        DT::datatable(
+          data.frame(
+            Error_Type = "Rendering Error",
+            Error_Message = as.character(e$message),
+            Error_Call = as.character(e$call),
+            Data_Available = !is.null(vals$leading_edge_table),
+            Data_Class = if(!is.null(vals$leading_edge_table)) class(vals$leading_edge_table)[1] else "NULL",
+            Data_Rows = if(!is.null(vals$leading_edge_table) && is.data.frame(vals$leading_edge_table)) nrow(vals$leading_edge_table) else "N/A"
+          ),
+          options = list(dom = 't', scrollX = TRUE),
+          rownames = FALSE
         )
-      ) %>%
-        DT::formatStyle(columns = colnames(vals$leading_edge_table), fontSize = '12px')
+      })
     })
 
     current_plot <- reactive({
