@@ -4,6 +4,7 @@
 # Removed shinyFiles imports - using fileInput instead for web deployment
 #' @importFrom bsicons bs_icon
 #' @importFrom ggplot2 ggsave
+#' @importFrom magrittr %>%
 #' @noRd
 fmsea_ui <- function(id) {
   ns <- NS(id)
@@ -1199,7 +1200,7 @@ fmsea_server <- function(id) {
         }
 
         # 正常渲染表格
-        DT::datatable(
+        dt_table <- DT::datatable(
           vals$leading_edge_table,
           rownames = FALSE,
           options = list(
@@ -1219,8 +1220,9 @@ fmsea_server <- function(id) {
               )
             )
           )
-        ) %>%
-          DT::formatStyle(columns = colnames(vals$leading_edge_table), fontSize = '12px')
+        )
+
+        DT::formatStyle(dt_table, columns = colnames(vals$leading_edge_table), fontSize = '12px')
 
       }, error = function(e) {
         # 显示具体错误信息
