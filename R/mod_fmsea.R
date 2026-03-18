@@ -472,7 +472,22 @@ fmsea_server <- function(id) {
           vals$final_result <- loaded_result
           # Generate leading edge scores table
           tryCatch({
-            vals$leading_edge_table <- featuremsea::get_leading_edge_scores(loaded_result)
+            # 尝试检测数据库类型，优先尝试KEGG，然后尝试HMDB
+            leading_edge_result <- NULL
+
+            # 先尝试KEGG_ID
+            tryCatch({
+              leading_edge_result <- featuremsea::get_leading_edge_scores(loaded_result, id_col = "KEGG_ID")
+            }, error = function(e_kegg) {
+              # 如果KEGG失败，尝试HMDB_ID
+              tryCatch({
+                leading_edge_result <<- featuremsea::get_leading_edge_scores(loaded_result, id_col = "HMDB_ID")
+              }, error = function(e_hmdb) {
+                stop(paste("Failed with both KEGG_ID and HMDB_ID:", e_kegg$message, "; ", e_hmdb$message))
+              })
+            })
+
+            vals$leading_edge_table <- leading_edge_result
           }, error = function(e) {
             vals$leading_edge_table <- NULL
             showNotification(paste("Warning: Could not generate annotation table:", e$message),
@@ -509,7 +524,22 @@ fmsea_server <- function(id) {
           vals$final_result <- loaded_result
           # Generate leading edge scores table
           tryCatch({
-            vals$leading_edge_table <- featuremsea::get_leading_edge_scores(loaded_result)
+            # 尝试检测数据库类型，优先尝试KEGG，然后尝试HMDB
+            leading_edge_result <- NULL
+
+            # 先尝试KEGG_ID
+            tryCatch({
+              leading_edge_result <- featuremsea::get_leading_edge_scores(loaded_result, id_col = "KEGG_ID")
+            }, error = function(e_kegg) {
+              # 如果KEGG失败，尝试HMDB_ID
+              tryCatch({
+                leading_edge_result <<- featuremsea::get_leading_edge_scores(loaded_result, id_col = "HMDB_ID")
+              }, error = function(e_hmdb) {
+                stop(paste("Failed with both KEGG_ID and HMDB_ID:", e_kegg$message, "; ", e_hmdb$message))
+              })
+            })
+
+            vals$leading_edge_table <- leading_edge_result
           }, error = function(e) {
             vals$leading_edge_table <- NULL
             showNotification(paste("Warning: Could not generate annotation table:", e$message),
@@ -779,7 +809,9 @@ fmsea_server <- function(id) {
 
           # Generate leading edge scores table
           tryCatch({
-            vals$leading_edge_table <- featuremsea::get_leading_edge_scores(vals$final_result)
+            # 使用分析时确定的数据库类型
+            id_col_to_use <- ifelse(l_db_type == "KEGG", "KEGG_ID", "HMDB_ID")
+            vals$leading_edge_table <- featuremsea::get_leading_edge_scores(vals$final_result, id_col = id_col_to_use)
           }, error = function(e) {
             vals$leading_edge_table <- NULL
             showNotification(paste("Warning: Could not generate annotation table:", e$message),
