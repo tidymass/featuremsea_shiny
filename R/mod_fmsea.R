@@ -195,12 +195,12 @@ fmsea_ui <- function(id) {
           padding = 0,
           div(
             style = "padding: 10px; border-bottom: 1px solid #eee;",
-            h6("Significant Modules (Select to visualize)"),
+            h6("Significant Modules"),
             DT::dataTableOutput(ns("sig_modules_table"))
           ),
           div(
             style = "padding: 10px;",
-            h6("Enrichment Plot"),
+            h6("Enrichment Plot (Click significant module to visualize)"),
             div(
               style = "display: flex; justify-content: center;",
               plotOutput(ns("fmsea_plot"), width = "1000px", height = "600px")
@@ -209,6 +209,19 @@ fmsea_ui <- function(id) {
               style = "display: flex; gap: 10px; margin-top: 5px;",
               downloadButton(ns("download_png"), "PNG", class = "btn-sm"),
               downloadButton(ns("download_pdf"), "PDF", class = "btn-sm")
+            )
+          ),
+
+          div(
+            style = "padding: 10px; border-top: 1px solid #eee;",
+            h6("Annotation Table"),
+            div(
+              style = "margin-top: 10px;",
+              DT::dataTableOutput(ns("leading_edge_annotation_table"))
+            ),
+            div(
+              style = "display: flex; gap: 10px; margin-top: 5px;",
+              downloadButton(ns("download_annotation_table"), "Download Table (CSV)", class = "btn-sm")
             )
           ),
 
@@ -233,6 +246,7 @@ fmsea_server <- function(id) {
       final_result = NULL,
       ranking_table = NULL,
       annotation_table = NULL,
+      leading_edge_table = NULL,
       feature_table_file_path = NULL,
       results_rda_file_path = NULL,
       llm_evaluated_result = NULL,
@@ -456,6 +470,14 @@ fmsea_server <- function(id) {
 
         if (!is.null(loaded_result)) {
           vals$final_result <- loaded_result
+          # Generate leading edge scores table
+          tryCatch({
+            vals$leading_edge_table <- featuremsea::get_leading_edge_scores(loaded_result)
+          }, error = function(e) {
+            vals$leading_edge_table <- NULL
+            showNotification(paste("Warning: Could not generate annotation table:", e$message),
+                           type = "warning", duration = 5)
+          })
           showNotification("Results loaded successfully!",
                            type = "message", duration = 3)
         }
@@ -485,6 +507,14 @@ fmsea_server <- function(id) {
 
         if (!is.null(loaded_result)) {
           vals$final_result <- loaded_result
+          # Generate leading edge scores table
+          tryCatch({
+            vals$leading_edge_table <- featuremsea::get_leading_edge_scores(loaded_result)
+          }, error = function(e) {
+            vals$leading_edge_table <- NULL
+            showNotification(paste("Warning: Could not generate annotation table:", e$message),
+                           type = "warning", duration = 5)
+          })
           showNotification("Demo result loaded successfully!",
                            type = "message", duration = 3)
         } else {
@@ -746,6 +776,15 @@ fmsea_server <- function(id) {
             max.iter.num = l_max_iter_num,
             fdr.thr = l_fdr_thr
           )
+
+          # Generate leading edge scores table
+          tryCatch({
+            vals$leading_edge_table <- featuremsea::get_leading_edge_scores(vals$final_result)
+          }, error = function(e) {
+            vals$leading_edge_table <- NULL
+            showNotification(paste("Warning: Could not generate annotation table:", e$message),
+                           type = "warning", duration = 5)
+          })
 
           incProgress(0.8, detail = "Analysis complete!")
 
@@ -1058,6 +1097,34 @@ fmsea_server <- function(id) {
       )
     })
 
+    # --- Leading Edge Annotation Table Output ---
+    output$leading_edge_annotation_table <- DT::renderDataTable({
+      req(vals$leading_edge_table)
+
+      DT::datatable(
+        vals$leading_edge_table,
+        rownames = FALSE,
+        options = list(
+          scrollX = TRUE,
+          scrollY = "400px",
+          pageLength = 10,
+          dom = 'frtip',
+          columnDefs = list(
+            list(
+              targets = "_all",
+              render = DT::JS(
+                "function(data, type, row, meta) {
+                  return type === 'display' && data !== null && data.length > 50 ?
+                    '' + data.substr(0, 50) + '...' : data;
+                }"
+              )
+            )
+          )
+        )
+      ) %>%
+        DT::formatStyle(columns = colnames(vals$leading_edge_table), fontSize = '12px')
+    })
+
     current_plot <- reactive({
       # 直接依赖于数据变量，确保在数据加载后重新渲染
       vals$final_result
@@ -1181,6 +1248,18 @@ fmsea_server <- function(id) {
       }
     )
 
+    output$download_annotation_table <- downloadHandler(
+      filename = function() {
+        paste0("fMSEA_Annotation_Table_", Sys.Date(), ".csv")
+      },
+      content = function(file) {
+        if (is.null(vals$leading_edge_table)) {
+          stop("No annotation table available for download")
+        }
+        utils::write.csv(vals$leading_edge_table, file, row.names = FALSE)
+      }
+    )
+
     output$download_png <- downloadHandler(
       filename = function() {
         paste0("fMSEA_Plot_", Sys.Date(), ".png")
@@ -1247,7 +1326,13 @@ fmsea_server <- function(id) {
           csv_file <- file.path(data_dir, "significant_modules.csv")
           utils::write.csv(current_result@significant_modules, csv_file, row.names = FALSE)
 
-          # 3. 生成所有显著通路的富集图 (PDF文件)
+          # 3. 保存注释表 (.csv文件)
+          if (!is.null(vals$leading_edge_table)) {
+            annotation_csv_file <- file.path(data_dir, "annotation_table.csv")
+            utils::write.csv(vals$leading_edge_table, annotation_csv_file, row.names = FALSE)
+          }
+
+          # 4. 生成所有显著通路的富集图 (PDF文件)
           pathway_ids <- current_result@significant_modules$pathway_id
 
           # 确保patchwork包可用
@@ -1289,7 +1374,7 @@ fmsea_server <- function(id) {
             }
           })
 
-          # 4. 创建zip文件
+          # 5. 创建zip文件
           current_dir <- getwd()
           setwd(temp_dir)
           utils::zip(file, "fMSEA_AllData", flags = "-r")
