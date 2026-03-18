@@ -323,28 +323,65 @@ fmsea_server <- function(id) {
 
     # --- Demo Data Handlers ---
     observeEvent(input$load_demo_data, {
-      demo_path <- system.file("demo_data", "feature_table.rda", package = "featuremseashiny")
+      # 显示模态对话框
+      showModal(modalDialog(
+        title = "Loading Demo Data",
+        div(
+          style = "text-align: center; padding: 20px;",
+          div(class = "spinner-border text-primary", role = "status", style = "margin-bottom: 15px;"),
+          p("Please wait while demo data is being loaded...", style = "margin: 0;")
+        ),
+        footer = NULL,
+        easyClose = FALSE,
+        fade = FALSE
+      ))
 
-      # Fallback to local path if package install path doesn't work
-      if (!file.exists(demo_path)) {
-        demo_path <- file.path("demo_data", "feature_table.rda")
-      }
+      withProgress(message = 'Loading Demo Data', value = 0, {
+        tryCatch({
+          incProgress(0.2, detail = "Locating demo data file...")
 
-      if (file.exists(demo_path)) {
-        vals$feature_table <- load_feature_table(demo_path)
-        vals$feature_table_file_path <- "demo_data/feature_table.rda"
+          demo_path <- system.file("demo_data", "feature_table.rda", package = "featuremseashiny")
 
-        if (!is.null(vals$feature_table)) {
-          showNotification("Demo data loaded successfully!",
-                           type = "message", duration = 3)
-        } else {
-          showNotification("Failed to load demo data",
-                           type = "error", duration = 3)
-        }
-      } else {
-        showNotification("Demo data file not found",
-                         type = "error", duration = 3)
-      }
+          # Fallback to local path if package install path doesn't work
+          if (!file.exists(demo_path)) {
+            demo_path <- file.path("demo_data", "feature_table.rda")
+          }
+
+          incProgress(0.3, detail = "Verifying file exists...")
+
+          if (file.exists(demo_path)) {
+            incProgress(0.3, detail = "Loading feature table...")
+            vals$feature_table <- load_feature_table(demo_path)
+            vals$feature_table_file_path <- "demo_data/feature_table.rda"
+
+            incProgress(0.2, detail = "Complete!")
+
+            # 移除模态对话框
+            removeModal()
+
+            if (!is.null(vals$feature_table)) {
+              showNotification("Demo data loaded successfully!",
+                               type = "message", duration = 3)
+            } else {
+              showNotification("Failed to load demo data",
+                               type = "error", duration = 3)
+            }
+          } else {
+            # 移除模态对话框
+            removeModal()
+
+            showNotification("Demo data file not found",
+                             type = "error", duration = 3)
+          }
+
+        }, error = function(e) {
+          # 移除模态对话框
+          removeModal()
+
+          showNotification(paste("Error loading demo data:", e$message),
+                           type = "error", duration = 5)
+        })
+      })
     })
 
     output$download_demo_csv <- downloadHandler(
