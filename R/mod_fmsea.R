@@ -1174,31 +1174,14 @@ fmsea_server <- function(id) {
 
     # --- Leading Edge Annotation Table Output ---
     output$leading_edge_annotation_table <- DT::renderDataTable({
+      # 如果没有数据，返回NULL（不显示任何内容）
+      if (is.null(vals$leading_edge_table) ||
+          !is.data.frame(vals$leading_edge_table) ||
+          nrow(vals$leading_edge_table) == 0) {
+        return(NULL)
+      }
+
       tryCatch({
-        # 检查数据是否存在
-        if (is.null(vals$leading_edge_table)) {
-          return(DT::datatable(
-            data.frame(
-              Status = "No Data",
-              Message = "No annotation table available. Please upload results or run analysis first."
-            ),
-            options = list(dom = 't'),
-            rownames = FALSE
-          ))
-        }
-
-        # 检查数据是否为空
-        if (!is.data.frame(vals$leading_edge_table) || nrow(vals$leading_edge_table) == 0) {
-          return(DT::datatable(
-            data.frame(
-              Status = "Empty Data",
-              Message = "Annotation table is empty or invalid."
-            ),
-            options = list(dom = 't'),
-            rownames = FALSE
-          ))
-        }
-
         # 正常渲染表格
         dt_table <- DT::datatable(
           vals$leading_edge_table,
@@ -1225,19 +1208,8 @@ fmsea_server <- function(id) {
         DT::formatStyle(dt_table, columns = colnames(vals$leading_edge_table), fontSize = '12px')
 
       }, error = function(e) {
-        # 显示具体错误信息
-        DT::datatable(
-          data.frame(
-            Error_Type = "Rendering Error",
-            Error_Message = as.character(e$message),
-            Error_Call = as.character(e$call),
-            Data_Available = !is.null(vals$leading_edge_table),
-            Data_Class = if(!is.null(vals$leading_edge_table)) class(vals$leading_edge_table)[1] else "NULL",
-            Data_Rows = if(!is.null(vals$leading_edge_table) && is.data.frame(vals$leading_edge_table)) nrow(vals$leading_edge_table) else "N/A"
-          ),
-          options = list(dom = 't', scrollX = TRUE),
-          rownames = FALSE
-        )
+        # 出现错误时也返回NULL，保持界面简洁
+        return(NULL)
       })
     })
 
