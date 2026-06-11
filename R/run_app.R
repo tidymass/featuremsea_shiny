@@ -26,6 +26,9 @@ run_featuremsea_app <- function(...) {
 
   # Create the UI
   ui <- bslib::page_navbar(
+    header = tags$head(
+      tags$link(rel = "icon", type = "image/png", href = "www/logo.png")
+    ),
     title = tags$span(
       tags$img(
         src = "www/logo.png",
@@ -74,23 +77,23 @@ run_featuremsea_app <- function(...) {
               h1("featureMSEA", style = "font-weight: 800; font-size: 2.4rem; margin-bottom: 10px;"),
               h5("Feature-based Metabolite Set Enrichment Analysis",
                  style = "font-weight: 400; opacity: 0.9; margin-bottom: 16px;"),
-              p("featureMSEA performs metabolite set enrichment directly from LC-MS metabolic
-                features with ambiguous annotations, without requiring confidently identified
-                metabolites. By extracting metabolite set-level biological insights from the
-                full untargeted feature space, featureMSEA enables mechanistic interpretation
-                of complex biological phenotypes, including disease, environmental exposure,
-                drug response, and aging.",
+              p("FeatureMSEA performs metabolite set enrichment directly from LC-MS metabolic
+                features without requiring confident metabolite identification. By extracting
+                metabolite set-level biological insights from the full untargeted feature space,
+                featureMSEA enables mechanistic interpretation of complex biological phenotypes
+                across diverse applications in disease biology, environmental exposure, drug
+                response, and related research areas.",
                 style = "opacity: 0.85; font-size: 1.0rem; margin-bottom: 24px;"),
               div(class = "d-flex gap-3 flex-wrap",
                 shiny::actionButton(
                   "start_analysis",
-                  tagList(bsicons::bs_icon("play-circle"), " Get Started"),
+                  shiny::tagList(bsicons::bs_icon("play-circle"), " Get Started"),
                   class = "btn-light btn-lg",
                   style = "font-weight: 600; color: #2C3E50;",
                   onclick = "$(\"a[data-value='featureMSEA Analysis']\").click();"
                 ),
                 tags$a(
-                  tagList(bsicons::bs_icon("book"), " Help Documents"),
+                  shiny::tagList(bsicons::bs_icon("book"), " Help Documents"),
                   href = "https://www.tidymass.org/tidymassshiny-tutorial/featuremsea",
                   target = "_blank",
                   class = "btn btn-outline-light btn-lg",

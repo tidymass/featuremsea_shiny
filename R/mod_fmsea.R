@@ -162,6 +162,7 @@ fmsea_ui <- function(id) {
                         selected = "siliconflow"),
             passwordInput(ns("api_key"), "API Key",
                          placeholder = "Enter your API key"),
+            uiOutput(ns("trial_key_ui")),
             tags$small("Your API key will be used securely and not stored",
                        style = "color: #666; font-style: italic;"),
             br(), br(),
@@ -254,6 +255,34 @@ fmsea_server <- function(id) {
       matrix_analysis_done = FALSE,
       literature_analysis_done = FALSE
     )
+
+    # --- Trial API Key ---
+    trial_key <- Sys.getenv("FEATUREMSEA_TRIAL_API_KEY")
+    trial_provider <- Sys.getenv("FEATUREMSEA_TRIAL_PROVIDER", unset = "siliconflow")
+
+    output$trial_key_ui <- renderUI({
+      if (nzchar(trial_key)) {
+        div(
+          style = "margin-top: 6px;",
+          actionButton(
+            ns("use_trial_key"),
+            tagList(bsicons::bs_icon("key"), " Use Trial Key"),
+            class = "btn-outline-info btn-sm",
+            style = "font-size: 0.8rem;"
+          ),
+          tags$small(" A limited trial key is available for testing.",
+                     style = "color: #888; font-style: italic;")
+        )
+      } else {
+        NULL
+      }
+    })
+
+    observeEvent(input$use_trial_key, {
+      shiny::updatePasswordInput(session, "api_key", value = trial_key)
+      shiny::updateSelectInput(session, "api_provider", selected = trial_provider)
+      showNotification("Trial key loaded. Usage may be limited.", type = "message", duration = 4)
+    })
 
     # 支持 CSV 和 RDA 格式的数据加载
     load_feature_table <- function(path) {
