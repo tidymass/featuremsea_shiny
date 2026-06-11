@@ -1,4 +1,4 @@
-#' Feature-based Metabolite Set Enrichment Analysis (fMSEA) Module
+#' Feature-based Metabolite Set Enrichment Analysis (featureMSEA) Module
 #' @import shiny
 #' @importFrom DT dataTableOutput renderDataTable datatable formatStyle
 # Removed shinyFiles imports - using fileInput instead for web deployment
@@ -9,7 +9,7 @@
 fmsea_ui <- function(id) {
   ns <- NS(id)
   bslib::nav_panel(
-    title = 'fMSEA Analysis',
+    title = 'featureMSEA Analysis',
     icon = bsicons::bs_icon("diagram-3"),
     bslib::layout_sidebar(
       sidebar = bslib::accordion(
@@ -116,7 +116,7 @@ fmsea_ui <- function(id) {
 
         # --- 3. Step 2 Parameters ---
         bslib::accordion_panel(
-          title = "Step 2: fMSEA Analysis",
+          title = "Step 2: featureMSEA Analysis",
           icon = bsicons::bs_icon("2-circle"),
 
           numericInput(ns("threads"), "Number of Threads", value = 3, min = 1),
@@ -234,7 +234,7 @@ fmsea_ui <- function(id) {
   )
 }
 
-#' fMSEA Server
+#' featureMSEA Server
 #' @noRd
 fmsea_server <- function(id) {
   moduleServer(id, function(input, output, session) {
@@ -633,7 +633,7 @@ fmsea_server <- function(id) {
         status_text <- "✓ Current: LLM-evaluated results"
       } else if (!is.null(vals$final_result)) {
         current_result <- vals$final_result
-        status_text <- "✓ Current: fMSEA results"
+        status_text <- "✓ Current: featureMSEA results"
       } else {
         return("No analysis results available")
       }
@@ -782,7 +782,7 @@ fmsea_server <- function(id) {
 
           # 成功提示
           showNotification(
-            "Step 1 completed successfully! Ready for fMSEA analysis.",
+            "Step 1 completed successfully! Ready for featureMSEA analysis.",
             type = "message",
             duration = 5
           )
@@ -806,7 +806,7 @@ fmsea_server <- function(id) {
 
       # 显示模态对话框
       showModal(modalDialog(
-        title = "Running Step 2: fMSEA Analysis",
+        title = "Running Step 2: featureMSEA Analysis",
         div(
           style = "text-align: center; padding: 20px;",
           div(
@@ -816,7 +816,7 @@ fmsea_server <- function(id) {
             span(class = "sr-only", "Loading...")
           ),
           br(), br(),
-          h5("Performing fMSEA analysis..."),
+          h5("Performing featureMSEA analysis..."),
           p("This analysis may take several minutes depending on the dataset size and parameters."),
           p("Please do not close the browser or navigate away."),
           div(id = ns("step2_progress"), "Loading pathway database...")
@@ -904,7 +904,7 @@ fmsea_server <- function(id) {
           removeModal()
 
           showNotification(
-            "fMSEA analysis completed successfully!",
+            "featureMSEA analysis completed successfully!",
             type = "message",
             duration = 5
           )
@@ -1307,12 +1307,12 @@ fmsea_server <- function(id) {
         timestamp <- format(Sys.time(), "%Y%m%d_%H%M%S")
 
         # 确定分析类型
-        analysis_type <- "fMSEA"
+        analysis_type <- "featureMSEA"
         if (vals$matrix_analysis_done || vals$literature_analysis_done) {
           analysis_components <- character()
           if (vals$matrix_analysis_done) analysis_components <- c(analysis_components, "Matrix")
           if (vals$literature_analysis_done) analysis_components <- c(analysis_components, "Topic")
-          analysis_type <- paste0("fMSEA_", paste(analysis_components, collapse = "_"))
+          analysis_type <- paste0("featureMSEA_", paste(analysis_components, collapse = "_"))
         }
 
         paste0("results_", analysis_type, "_", timestamp, ".rda")
@@ -1348,12 +1348,12 @@ fmsea_server <- function(id) {
           if (vals$literature_analysis_done) analysis_types <- c(analysis_types, "Topic")
 
           if (length(analysis_types) > 0) {
-            paste0("fMSEA_LLM_", paste(analysis_types, collapse = "_"), "_Results_", Sys.Date(), ".csv")
+            paste0("featureMSEA_LLM_", paste(analysis_types, collapse = "_"), "_Results_", Sys.Date(), ".csv")
           } else {
-            paste0("fMSEA_LLM_Results_", Sys.Date(), ".csv")
+            paste0("featureMSEA_LLM_Results_", Sys.Date(), ".csv")
           }
         } else {
-          paste0("fMSEA_Results_", Sys.Date(), ".csv")
+          paste0("featureMSEA_Results_", Sys.Date(), ".csv")
         }
       },
       content = function(file) {
@@ -1375,7 +1375,7 @@ fmsea_server <- function(id) {
 
     output$download_annotation_table <- downloadHandler(
       filename = function() {
-        paste0("fMSEA_Annotation_Table_", Sys.Date(), ".csv")
+        paste0("featureMSEA_Annotation_Table_", Sys.Date(), ".csv")
       },
       content = function(file) {
         if (is.null(vals$leading_edge_table)) {
@@ -1387,7 +1387,7 @@ fmsea_server <- function(id) {
 
     output$download_png <- downloadHandler(
       filename = function() {
-        paste0("fMSEA_Plot_", Sys.Date(), ".png")
+        paste0("featureMSEA_Plot_", Sys.Date(), ".png")
       },
       content = function(file) {
         ggplot2::ggsave(file, plot = current_plot(),
@@ -1397,7 +1397,7 @@ fmsea_server <- function(id) {
 
     output$download_pdf <- downloadHandler(
       filename = function() {
-        paste0("fMSEA_Plot_", Sys.Date(), ".pdf")
+        paste0("featureMSEA_Plot_", Sys.Date(), ".pdf")
       },
       content = function(file) {
         ggplot2::ggsave(file, plot = current_plot(),
@@ -1409,14 +1409,14 @@ fmsea_server <- function(id) {
     output$download_all_data <- downloadHandler(
       filename = function() {
         timestamp <- format(Sys.time(), "%Y%m%d_%H%M%S")
-        analysis_type <- "fMSEA"
+        analysis_type <- "featureMSEA"
         if (vals$matrix_analysis_done || vals$literature_analysis_done) {
           analysis_components <- character()
           if (vals$matrix_analysis_done) analysis_components <- c(analysis_components, "Matrix")
           if (vals$literature_analysis_done) analysis_components <- c(analysis_components, "Topic")
-          analysis_type <- paste0("fMSEA_", paste(analysis_components, collapse = "_"))
+          analysis_type <- paste0("featureMSEA_", paste(analysis_components, collapse = "_"))
         }
-        paste0("fMSEA_AllData_", analysis_type, "_", timestamp, ".zip")
+        paste0("featureMSEA_AllData_", analysis_type, "_", timestamp, ".zip")
       },
       content = function(file) {
         # 确定要保存的结果对象
@@ -1433,7 +1433,7 @@ fmsea_server <- function(id) {
 
         # 创建临时目录
         temp_dir <- tempdir()
-        data_dir <- file.path(temp_dir, "fMSEA_AllData")
+        data_dir <- file.path(temp_dir, "featureMSEA_AllData")
         if (dir.exists(data_dir)) unlink(data_dir, recursive = TRUE)
         dir.create(data_dir, recursive = TRUE)
 
@@ -1502,7 +1502,7 @@ fmsea_server <- function(id) {
           # 5. 创建zip文件
           current_dir <- getwd()
           setwd(temp_dir)
-          utils::zip(file, "fMSEA_AllData", flags = "-r")
+          utils::zip(file, "featureMSEA_AllData", flags = "-r")
           setwd(current_dir)
 
           showNotification("All data packaged successfully!", type = "message", duration = 3)
