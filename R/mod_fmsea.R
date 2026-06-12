@@ -23,82 +23,97 @@ fmsea_ui <- function(id) {
     ")),
     bslib::layout_sidebar(
       sidebar = bslib::accordion(
-        open = "Data Upload & Download",
+        open = "Data Import & Export",
 
-        # --- 1. Data Upload & Download ---
+        # --- 1. Data Import & Export ---
         bslib::accordion_panel(
-          title = "Data Upload & Download",
+          title = "Data Import & Export",
           icon = bsicons::bs_icon("upload"),
 
-          # Feature Table Upload (支持 CSV/RDA)
-          h6("Feature Table", style = "font-weight: bold; color: #333; margin-bottom: 8px;"),
-          fileInput(ns('feature_table_file'),
-                    label = '',
-                    accept = c(".csv", ".rda", ".RData"),
-                    placeholder = "Select Feature Table (CSV/RDA)"),
-          div(textOutput(ns("feature_table_path")),
-              style = "font-size: 0.75em; color: #666; margin-top: 5px; margin-bottom: 10px; padding: 5px; background-color: #f8f9fa; border-radius: 3px;"),
+          # --- Option A: New Analysis ---
+          div(
+            style = "border-left: 3px solid #18BC9C; padding-left: 10px; margin-bottom: 12px;",
+            p("Option A: New Analysis", style = "font-weight: 700; color: #18BC9C; margin-bottom: 10px; font-size: 0.9em; text-transform: uppercase; letter-spacing: 0.04em;"),
 
-          # Demo Data Section
-          div(style = "margin-bottom: 15px;",
-              p("Or use demo data:", style = "font-size: 0.9em; font-weight: bold; margin-bottom: 8px; color: #6c757d;"),
-              div(style = "display: flex; gap: 5px; flex-wrap: wrap; align-items: center;",
-                  actionButton(ns("load_demo_data"),
-                              HTML(paste(as.character(bsicons::bs_icon("database")), "Load Demo Data")),
-                              class = "btn-info btn-sm",
-                              style = "font-size: 0.8rem; padding: 0.3rem 0.6rem;"),
-                  downloadButton(ns("download_demo_csv"), "CSV",
-                               class = "btn-outline-secondary btn-sm",
-                               style = "font-size: 0.8rem; padding: 0.3rem 0.6rem;"),
-                  downloadButton(ns("download_demo_rda"), "RDA",
-                               class = "btn-outline-secondary btn-sm",
-                               style = "font-size: 0.8rem; padding: 0.3rem 0.6rem;")
-              )
+            h6("Feature Table", style = "font-weight: bold; color: #333; margin-bottom: 8px;"),
+            fileInput(ns('feature_table_file'),
+                      label = '',
+                      accept = c(".csv", ".rda", ".RData"),
+                      placeholder = "Select Feature Table (CSV/RDA)"),
+            div(textOutput(ns("feature_table_path")),
+                style = "font-size: 0.75em; color: #666; margin-top: 5px; margin-bottom: 10px; padding: 5px; background-color: #f8f9fa; border-radius: 3px;"),
+
+            div(style = "margin-bottom: 10px;",
+                p("Or use demo data:", style = "font-size: 0.85em; font-weight: bold; margin-bottom: 6px; color: #6c757d;"),
+                div(style = "display: flex; gap: 5px; flex-wrap: wrap; align-items: center;",
+                    actionButton(ns("load_demo_data"),
+                                HTML(paste(as.character(bsicons::bs_icon("database")), "Load Demo Data")),
+                                class = "btn-info btn-sm",
+                                style = "font-size: 0.8rem; padding: 0.3rem 0.6rem;"),
+                    downloadButton(ns("download_demo_csv"), "CSV",
+                                 class = "btn-outline-secondary btn-sm",
+                                 style = "font-size: 0.8rem; padding: 0.3rem 0.6rem;"),
+                    downloadButton(ns("download_demo_rda"), "RDA",
+                                 class = "btn-outline-secondary btn-sm",
+                                 style = "font-size: 0.8rem; padding: 0.3rem 0.6rem;")
+                )
+            ),
+
+            h6("MS1 Database", style = "font-weight: bold; color: #333; margin-bottom: 8px;"),
+            selectInput(ns("ms1_database"), "",
+                        choices = c(
+                          "KEGG MS1 Database" = "kegg_compound_ms1",
+                          "HMDB MS1 Database" = "hmdb_compound_ms1"
+                        ),
+                        selected = "kegg_compound_ms1"),
+
+            h6("Pathway Database", style = "font-weight: bold; color: #333; margin-bottom: 8px;"),
+            uiOutput(ns("pathway_database_ui"))
           ),
 
-          # MS1 Database Selection
-          h6("MS1 Database", style = "font-weight: bold; color: #333; margin-bottom: 8px;"),
-          selectInput(ns("ms1_database"), "",
-                      choices = c(
-                        "KEGG MS1 Database" = "kegg_compound_ms1",
-                        "HMDB MS1 Database" = "hmdb_compound_ms1"
-                      ),
-                      selected = "kegg_compound_ms1"),
+          # --- OR divider ---
+          div(
+            style = "display: flex; align-items: center; gap: 8px; margin: 14px 0;",
+            tags$hr(style = "flex: 1; margin: 0; border-color: #dee2e6;"),
+            tags$span("OR", style = "font-size: 0.8em; font-weight: 700; color: #adb5bd; white-space: nowrap;"),
+            tags$hr(style = "flex: 1; margin: 0; border-color: #dee2e6;")
+          ),
 
-          # Pathway Database Selection (动态更新)
-          h6("Pathway Database", style = "font-weight: bold; color: #333; margin-bottom: 8px;"),
-          uiOutput(ns("pathway_database_ui")),
+          # --- Option B: Load Existing Result ---
+          div(
+            style = "border-left: 3px solid #3498DB; padding-left: 10px; margin-bottom: 12px;",
+            p("Option B: Load Existing Result", style = "font-weight: 700; color: #3498DB; margin-bottom: 10px; font-size: 0.9em; text-transform: uppercase; letter-spacing: 0.04em;"),
 
+            fileInput(ns('results_rda_file'),
+                      label = 'Load Result (RDA)',
+                      accept = c(".rda", ".RData"),
+                      width = "100%"),
+
+            div(style = "margin-bottom: 10px;",
+                p("Or use demo result:", style = "font-size: 0.85em; font-weight: bold; margin-bottom: 6px; color: #6c757d;"),
+                actionButton(ns("load_demo_result"),
+                            HTML(paste(as.character(bsicons::bs_icon("clipboard-data")), "Load Demo Result")),
+                            class = "btn-info btn-sm",
+                            style = "font-size: 0.8rem; padding: 0.3rem 0.6rem;")
+            ),
+
+            div(textOutput(ns("results_rda_path")),
+                style = "font-size: 0.75em; color: #666; margin-bottom: 6px; padding: 5px; background-color: #f8f9fa; border-radius: 3px;"),
+            div(textOutput(ns("current_results_status")),
+                style = "font-size: 0.75em; color: #666; padding: 5px; background-color: #e8f5e8; border-radius: 3px;")
+          ),
+
+          # --- Save ---
           hr(),
-
-          p("Result Management:", style = "font-size: 1.1em; font-weight: bold; margin-bottom: 5px;"),
-          div(style = "margin-bottom: 10px;",
-              fileInput(ns('results_rda_file'),
-                        label = 'Load Result (RDA)',
-                        accept = c(".rda", ".RData"),
-                        width = "100%")),
-
-          # Demo Result Section
-          div(style = "margin-bottom: 15px;",
-              p("Or use demo result:", style = "font-size: 0.9em; font-weight: bold; margin-bottom: 8px; color: #6c757d;"),
-              actionButton(ns("load_demo_result"),
-                          HTML(paste(as.character(bsicons::bs_icon("clipboard-data")), "Load Demo Result")),
-                          class = "btn-info btn-sm",
-                          style = "font-size: 0.8rem; padding: 0.3rem 0.6rem;")
-          ),
-
-          div(style = "display: flex; gap: 5px; margin-bottom: 10px; flex-wrap: wrap;",
+          p("Save Results:", style = "font-size: 0.95em; font-weight: bold; margin-bottom: 8px;"),
+          div(style = "display: flex; gap: 5px; flex-wrap: wrap;",
               downloadButton(ns("download_current_results"), "Save Result",
                             class = "btn-success",
                             style = "font-size: 0.875rem; padding: 0.375rem 0.75rem; width: 140px;"),
               downloadButton(ns("download_all_data"),
                             HTML(paste(as.character(bsicons::bs_icon("archive")), "Save All Data")),
                             style = "background-color: #ff8c42; border-color: #ff8c42; color: white; font-size: 0.875rem; padding: 0.375rem 0.75rem; width: 140px;")
-          ),
-          div(textOutput(ns("results_rda_path")),
-              style = "font-size: 0.75em; color: #666; margin-top: 5px; margin-bottom: 10px; padding: 5px; background-color: #f8f9fa; border-radius: 3px;"),
-          div(textOutput(ns("current_results_status")),
-              style = "font-size: 0.75em; color: #666; padding: 5px; background-color: #e8f5e8; border-radius: 3px;")
+          )
         ),
 
         # --- 2. Step 1 Parameters ---
@@ -133,7 +148,7 @@ fmsea_ui <- function(id) {
           numericInput(ns("min_compounds"), "Min Compounds per Pathway", value = 15),
           numericInput(ns("max_compounds"), "Max Compounds per Pathway", value = 300),
           numericInput(ns("perm_num"), "Number of Permutations", value = 1000),
-          numericInput(ns("max_iter_num"), "Maximum Iterations", value = 1, min = 1, max = 20),
+          numericInput(ns("max_iter_num"), "Maximum Iterations", value = 3, min = 1, max = 20),
           numericInput(ns("fdr_thr"), "FDR Threshold", value = 0.05),
 
           actionButton(ns("run_step2"), "Run Step 2",
@@ -143,12 +158,12 @@ fmsea_ui <- function(id) {
 
         # --- 4. Step 3 LLM Evaluation ---
         bslib::accordion_panel(
-          title = "Step 3: LLM Evaluation (optional)",
+          title = "Step 3: LLM-Assisted Interpretation (Optional)",
           icon = bsicons::bs_icon("3-circle"),
 
           div(
             style = "margin-bottom: 15px;",
-            h6("Matrix Relevance Analysis", style = "color: #0066cc; margin-bottom: 8px;"),
+            h6("Matrix Confidence Assessment", style = "color: #0066cc; margin-bottom: 8px;"),
             textInput(ns("sample_source"), "Sample Source",
                       value = "", placeholder = "e.g., urine, plasma, serum, tissue"),
             tags$small("Analyze pathway reliability in specific sample matrix",
@@ -157,7 +172,7 @@ fmsea_ui <- function(id) {
 
           div(
             style = "margin-bottom: 15px;",
-            h6("Topic Relevance Analysis", style = "color: #0066cc; margin-bottom: 8px;"),
+            h6("Topic Relevance Assessment", style = "color: #0066cc; margin-bottom: 8px;"),
             textInput(ns("research_topic"), "Research Topic",
                       value = "", placeholder = "e.g., cancer, diabetes, metabolism, aging"),
             tags$small("Analyze pathway relevance to research topic",
@@ -181,11 +196,11 @@ fmsea_ui <- function(id) {
 
           div(
             style = "margin-bottom: 10px;",
-            checkboxInput(ns("run_matrix_analysis"), "Run Matrix Relevance Analysis", value = TRUE),
-            checkboxInput(ns("run_literature_analysis"), "Run Topic Relevance Analysis", value = TRUE)
+            checkboxInput(ns("run_matrix_analysis"), "Run Matrix Confidence Assessment", value = TRUE),
+            checkboxInput(ns("run_literature_analysis"), "Run Topic Relevance Assessment", value = TRUE)
           ),
 
-          actionButton(ns("run_step3"), "Run LLM Evaluation",
+          actionButton(ns("run_step3"), "Run LLM-Assisted Interpretation",
                        class = "btn-primary",
                        style = "width: 100%;"),
 
@@ -1016,7 +1031,7 @@ fmsea_server <- function(id) {
 
       # 显示模态对话框
       showModal(modalDialog(
-        title = "Running LLM Evaluation",
+        title = "Running LLM-Assisted Interpretation",
         div(
           style = "text-align: center; padding: 20px;",
           div(
@@ -1086,12 +1101,12 @@ fmsea_server <- function(id) {
         return()
       }
 
-      withProgress(message = 'LLM Evaluation Progress', value = 0, {
+      withProgress(message = 'LLM-Assisted Interpretation Progress', value = 0, {
 
         tryCatch({
           current_step <- 0
 
-          # Matrix Relevance Analysis
+          # Matrix Confidence Assessment
           if (need_matrix) {
             current_step <- current_step + 1
             incProgress(0.4, detail = paste("Matrix relevance analysis with", local_model, "... (", current_step, "/", total_steps, ")"))
@@ -1126,7 +1141,7 @@ fmsea_server <- function(id) {
             })
           }
 
-          # Topic Relevance Analysis
+          # Topic Relevance Assessment
           if (need_literature) {
             current_step <- current_step + 1
             incProgress(0.4, detail = paste("Topic relevance analysis with", local_model, "... (", current_step, "/", total_steps, ")"))
@@ -1201,7 +1216,7 @@ fmsea_server <- function(id) {
           removeModal()
 
           showNotification(
-            paste("LLM Evaluation Error:", e$message),
+            paste("LLM-Assisted Interpretation Error:", e$message),
             type = "error", duration = 10
           )
         })
@@ -1223,10 +1238,28 @@ fmsea_server <- function(id) {
       req(current_result)
       df <- current_result@significant_modules
 
+      pmid_to_links <- function(x) {
+        if (is.na(x) || x == "" || x == "NA") return(x)
+        pmids <- trimws(strsplit(x, "\\{\\}")[[1]])
+        pmids <- pmids[nzchar(pmids)]
+        if (length(pmids) == 0) return(x)
+        paste(paste0('<a href="https://pubmed.ncbi.nlm.nih.gov/', pmids,
+                     '/" target="_blank">', pmids, '</a>'),
+              collapse = " | ")
+      }
+
+      pmid_cols <- intersect(c("literature_pmids_exact", "literature_pmids_fuzzy"), names(df))
+      for (col in pmid_cols) {
+        df[[col]] <- sapply(as.character(df[[col]]), pmid_to_links, USE.NAMES = FALSE)
+      }
+
+      non_pmid_col_idx <- setdiff(seq_len(ncol(df)) - 1, match(pmid_cols, names(df)) - 1)
+
       DT::datatable(
         df,
         selection = 'single',
         rownames = FALSE,
+        escape = FALSE,
         options = list(
           scrollX = TRUE,
           scrollY = "200px",
@@ -1234,11 +1267,11 @@ fmsea_server <- function(id) {
           dom = 'tp',
           columnDefs = list(
             list(
-              targets = "_all",
+              targets = non_pmid_col_idx,
               render = DT::JS(
                 "function(data, type, row, meta) {
-                  return type === 'display' && data !== null && data.length > 20 ?
-                    '' + data.substr(0, 20) + '...' : data;
+                  return type === 'display' && data !== null && String(data).length > 20 ?
+                    String(data).substr(0, 20) + '...' : data;
                 }"
               )
             )
@@ -1557,8 +1590,21 @@ fmsea_server <- function(id) {
     )
 
     # --- Result Summary ---
-    output$pathway_summary <- renderText({
-      # 获取当前最新的结果对象
+    pmids_to_ui <- function(pmid_str) {
+      if (is.na(pmid_str) || pmid_str == "" || pmid_str == "NA") return(tags$span("NA"))
+      pmids <- trimws(strsplit(as.character(pmid_str), "\\{\\}")[[1]])
+      pmids <- pmids[nzchar(pmids)]
+      if (length(pmids) == 0) return(tags$span("NA"))
+      link_tags <- lapply(pmids, function(id) {
+        tags$a(id,
+               href = paste0("https://pubmed.ncbi.nlm.nih.gov/", id, "/"),
+               target = "_blank",
+               style = "margin-right: 6px;")
+      })
+      do.call(tags$span, link_tags)
+    }
+
+    output$pathway_summary <- renderUI({
       current_result <- NULL
       has_llm_evaluation <- !is.null(vals$llm_evaluated_result)
 
@@ -1568,21 +1614,22 @@ fmsea_server <- function(id) {
         current_result <- vals$final_result
       }
 
-      # 检查是否有选中的pathway
       if (is.null(current_result) || is.null(input$sig_modules_table_rows_selected)) {
-        if (has_llm_evaluation) {
-          return("Please select a pathway from the table above to view its LLM evaluation details.")
-        } else {
-          return("Please select a pathway from the table above to view its details.")
-        }
+        return(tags$p(
+          style = "color: #888; font-style: italic;",
+          if (has_llm_evaluation)
+            "Please select a pathway from the table above to view its LLM evaluation details."
+          else
+            "Please select a pathway from the table above to view its details."
+        ))
       }
 
       idx <- input$sig_modules_table_rows_selected
       pathway_data <- current_result@significant_modules[idx, ]
 
-      # 根据是否进行了LLM评估来定义要显示的字段
+      pmid_fields <- c("literature_pmids_exact", "literature_pmids_fuzzy")
+
       if (has_llm_evaluation) {
-        # 显示完整的LLM评估字段
         fields <- c(
           "pathway_name" = "Pathway Name",
           "matrix_source" = "Matrix Source",
@@ -1594,7 +1641,6 @@ fmsea_server <- function(id) {
           "topic_confidence_score" = "Topic Confidence Score"
         )
       } else {
-        # 只显示基础字段，不包含LLM相关字段
         fields <- c(
           "pathway_name" = "Pathway Name",
           "NES" = "Normalized Enrichment Score",
@@ -1605,22 +1651,29 @@ fmsea_server <- function(id) {
         )
       }
 
-      # 构建显示文本
-      output_lines <- character()
-      for (field_name in names(fields)) {
+      rows <- lapply(names(fields), function(field_name) {
         field_label <- fields[[field_name]]
-        if (field_name %in% names(pathway_data)) {
-          field_value <- pathway_data[[field_name]]
-          if (is.na(field_value) || is.null(field_value) || field_value == "") {
-            field_value <- "NA"
-          }
-        } else {
-          field_value <- "NA"
-        }
-        output_lines <- c(output_lines, paste0(field_label, ": ", field_value))
-      }
+        field_value <- if (field_name %in% names(pathway_data)) pathway_data[[field_name]] else NA
 
-      return(paste(output_lines, collapse = "\n"))
+        value_ui <- if (field_name %in% pmid_fields) {
+          pmids_to_ui(field_value)
+        } else {
+          val <- if (is.na(field_value) || is.null(field_value) || field_value == "") "NA" else as.character(field_value)
+          tags$span(val)
+        }
+
+        tags$div(
+          style = "margin-bottom: 6px;",
+          tags$span(paste0(field_label, ": "),
+                    style = "font-weight: 600; color: #444;"),
+          value_ui
+        )
+      })
+
+      tags$div(
+        style = "font-size: 0.9rem; padding: 4px 0;",
+        do.call(tagList, rows)
+      )
     })
 
     # --- 动态渲染 Pathway LLM Evaluation UI ---
@@ -1640,7 +1693,7 @@ fmsea_server <- function(id) {
                                class = "btn-sm btn-outline-secondary",
                                onclick = "navigator.clipboard.writeText(document.getElementById('pathway_summary_text').innerText);")),
               div(id = "pathway_summary_text",
-                  verbatimTextOutput(ns("pathway_summary")))
+                  uiOutput(ns("pathway_summary")))
             )
           )
         )
