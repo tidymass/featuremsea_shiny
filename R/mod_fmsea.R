@@ -11,6 +11,16 @@ fmsea_ui <- function(id) {
   bslib::nav_panel(
     title = 'featureMSEA Analysis',
     icon = bsicons::bs_icon("diagram-3"),
+    tags$script(HTML("
+      Shiny.addCustomMessageHandler('fillPasswordInput', function(data) {
+        var el = document.getElementById(data.id);
+        if (el) {
+          var setter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value').set;
+          setter.call(el, data.value);
+          el.dispatchEvent(new Event('input', { bubbles: true }));
+        }
+      });
+    ")),
     bslib::layout_sidebar(
       sidebar = bslib::accordion(
         open = "Data Upload & Download",
@@ -266,12 +276,10 @@ fmsea_server <- function(id) {
           style = "margin-top: 6px;",
           actionButton(
             ns("use_trial_key"),
-            tagList(bsicons::bs_icon("key"), " Use Trial Key"),
+            tagList(bsicons::bs_icon("key"), " Use temporary API key"),
             class = "btn-outline-info btn-sm",
             style = "font-size: 0.8rem;"
-          ),
-          tags$small(" A limited trial key is available for testing.",
-                     style = "color: #888; font-style: italic;")
+          )
         )
       } else {
         NULL
@@ -279,7 +287,8 @@ fmsea_server <- function(id) {
     })
 
     observeEvent(input$use_trial_key, {
-      shiny::updatePasswordInput(session, "api_key", value = trial_key)
+      session$sendCustomMessage("fillPasswordInput",
+        list(id = ns("api_key"), value = trial_key))
       shiny::updateSelectInput(session, "api_provider", selected = trial_provider)
       showNotification("Trial key loaded. Usage may be limited.", type = "message", duration = 4)
     })
