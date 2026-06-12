@@ -393,11 +393,11 @@ fmsea_server <- function(id) {
         tryCatch({
           incProgress(0.2, detail = "Locating demo data file...")
 
-          demo_path <- system.file("demo_data", "feature_table.rda", package = "featuremseashiny")
+          demo_path <- system.file("demo_data", "feature_table_demo.rda", package = "featuremseashiny")
 
           # Fallback to local path if package install path doesn't work
           if (!file.exists(demo_path)) {
-            demo_path <- file.path("demo_data", "feature_table.rda")
+            demo_path <- file.path("demo_data", "feature_table_demo.rda")
           }
 
           incProgress(0.3, detail = "Verifying file exists...")
@@ -405,7 +405,7 @@ fmsea_server <- function(id) {
           if (file.exists(demo_path)) {
             incProgress(0.3, detail = "Loading feature table...")
             vals$feature_table <- load_feature_table(demo_path)
-            vals$feature_table_file_path <- "demo_data/feature_table.rda"
+            vals$feature_table_file_path <- "demo_data/feature_table_demo.rda"
 
             incProgress(0.2, detail = "Complete!")
 
@@ -438,13 +438,13 @@ fmsea_server <- function(id) {
     })
 
     output$download_demo_csv <- downloadHandler(
-      filename = "demo_feature_table.csv",
+      filename = "feature_table_demo.csv",
       content = function(file) {
-        demo_path <- system.file("demo_data", "feature_table.csv", package = "featuremseashiny")
+        demo_path <- system.file("demo_data", "feature_table_demo.csv", package = "featuremseashiny")
 
         # Fallback to local path
         if (!file.exists(demo_path)) {
-          demo_path <- file.path("demo_data", "feature_table.csv")
+          demo_path <- file.path("demo_data", "feature_table_demo.csv")
         }
 
         if (file.exists(demo_path)) {
@@ -458,11 +458,11 @@ fmsea_server <- function(id) {
     output$download_demo_rda <- downloadHandler(
       filename = "demo_feature_table.rda",
       content = function(file) {
-        demo_path <- system.file("demo_data", "feature_table.rda", package = "featuremseashiny")
+        demo_path <- system.file("demo_data", "feature_table_demo.rda", package = "featuremseashiny")
 
         # Fallback to local path
         if (!file.exists(demo_path)) {
-          demo_path <- file.path("demo_data", "feature_table.rda")
+          demo_path <- file.path("demo_data", "feature_table_demo.rda")
         }
 
         if (file.exists(demo_path)) {
@@ -1238,28 +1238,10 @@ fmsea_server <- function(id) {
       req(current_result)
       df <- current_result@significant_modules
 
-      pmid_to_links <- function(x) {
-        if (is.na(x) || x == "" || x == "NA") return(x)
-        pmids <- trimws(strsplit(x, "\\{\\}")[[1]])
-        pmids <- pmids[nzchar(pmids)]
-        if (length(pmids) == 0) return(x)
-        paste(paste0('<a href="https://pubmed.ncbi.nlm.nih.gov/', pmids,
-                     '/" target="_blank">', pmids, '</a>'),
-              collapse = " | ")
-      }
-
-      pmid_cols <- intersect(c("literature_pmids_exact", "literature_pmids_fuzzy"), names(df))
-      for (col in pmid_cols) {
-        df[[col]] <- sapply(as.character(df[[col]]), pmid_to_links, USE.NAMES = FALSE)
-      }
-
-      non_pmid_col_idx <- setdiff(seq_len(ncol(df)) - 1, match(pmid_cols, names(df)) - 1)
-
       DT::datatable(
         df,
         selection = 'single',
         rownames = FALSE,
-        escape = FALSE,
         options = list(
           scrollX = TRUE,
           scrollY = "200px",
@@ -1267,11 +1249,11 @@ fmsea_server <- function(id) {
           dom = 'tp',
           columnDefs = list(
             list(
-              targets = non_pmid_col_idx,
+              targets = "_all",
               render = DT::JS(
                 "function(data, type, row, meta) {
-                  return type === 'display' && data !== null && String(data).length > 20 ?
-                    String(data).substr(0, 20) + '...' : data;
+                  return type === 'display' && data !== null && data.length > 20 ?
+                    '' + data.substr(0, 20) + '...' : data;
                 }"
               )
             )
