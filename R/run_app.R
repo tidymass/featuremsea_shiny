@@ -27,7 +27,12 @@ run_featuremsea_app <- function(...) {
   # Create the UI
   ui <- bslib::page_navbar(
     header = tags$head(
-      tags$link(rel = "icon", type = "image/png", href = "www/logo.png")
+      tags$link(rel = "icon", type = "image/png", href = "www/logo.png"),
+      tags$style(HTML("
+        .navbar { align-items: center; }
+        .navbar-nav { align-self: center; }
+        .navbar-nav .nav-link { display: flex; align-items: center; height: 100%; }
+      "))
     ),
     title = tags$span(
       tags$img(
@@ -94,7 +99,7 @@ run_featuremsea_app <- function(...) {
                 ),
                 tags$a(
                   shiny::tagList(bsicons::bs_icon("book"), " Help Documents"),
-                  href = "https://www.tidymass.org/tidymassshiny-tutorial/featuremsea",
+                  href = "https://www.tidymass.org/featuremsea_tutorial/",
                   target = "_blank",
                   class = "btn btn-outline-light btn-lg",
                   style = "font-weight: 600;"
@@ -368,6 +373,15 @@ run_featuremsea_app <- function(...) {
             )
           )
         )
+      )
+    ),
+
+    bslib::nav_spacer(),
+    bslib::nav_item(
+      tags$img(
+        src = "www/lab_logo.png",
+        height = "60px",
+        style = "vertical-align: middle; padding: 0 12px;"
       )
     )
   )
