@@ -23,11 +23,11 @@ fmsea_ui <- function(id) {
     ")),
     bslib::layout_sidebar(
       sidebar = bslib::accordion(
-        open = "Data Import & Export",
+        open = "Data Import",
 
-        # --- 1. Data Import & Export ---
+        # --- 1. Data Import ---
         bslib::accordion_panel(
-          title = "Data Import & Export",
+          title = "Data Import",
           icon = bsicons::bs_icon("upload"),
 
           # --- Option A: New Analysis ---
@@ -98,22 +98,9 @@ fmsea_ui <- function(id) {
             ),
 
             div(textOutput(ns("results_rda_path")),
-                style = "font-size: 0.75em; color: #666; margin-bottom: 6px; padding: 5px; background-color: #f8f9fa; border-radius: 3px;"),
-            div(textOutput(ns("current_results_status")),
-                style = "font-size: 0.75em; color: #666; padding: 5px; background-color: #e8f5e8; border-radius: 3px;")
+                style = "font-size: 0.75em; color: #666; margin-bottom: 6px; padding: 5px; background-color: #f8f9fa; border-radius: 3px;")
           ),
 
-          # --- Save ---
-          hr(),
-          p("Save Results:", style = "font-size: 0.95em; font-weight: bold; margin-bottom: 8px;"),
-          div(style = "display: flex; gap: 5px; flex-wrap: wrap;",
-              downloadButton(ns("download_current_results"), "Save Result",
-                            class = "btn-success",
-                            style = "font-size: 0.875rem; padding: 0.375rem 0.75rem; width: 140px;"),
-              downloadButton(ns("download_all_data"),
-                            HTML(paste(as.character(bsicons::bs_icon("archive")), "Save All Data")),
-                            style = "background-color: #ff8c42; border-color: #ff8c42; color: white; font-size: 0.875rem; padding: 0.375rem 0.75rem; width: 140px;")
-          )
         ),
 
         # --- 2. Step 1 Parameters ---
@@ -207,6 +194,24 @@ fmsea_ui <- function(id) {
           # 状态显示
           div(style = "margin-top: 10px;",
               uiOutput(ns("step3_status")))
+        ),
+
+        # --- 5. Save Results ---
+        bslib::accordion_panel(
+          title = "Save Results",
+          icon = bsicons::bs_icon("download"),
+
+          div(textOutput(ns("current_results_status")),
+              style = "font-size: 0.75em; color: #666; margin-bottom: 10px; padding: 5px; background-color: #e8f5e8; border-radius: 3px;"),
+
+          div(style = "display: flex; gap: 5px; flex-wrap: wrap;",
+              downloadButton(ns("download_current_results"), "Save Result",
+                            class = "btn-success",
+                            style = "font-size: 0.875rem; padding: 0.375rem 0.75rem; width: 140px;"),
+              downloadButton(ns("download_all_data"),
+                            HTML(paste(as.character(bsicons::bs_icon("archive")), "Save All Data")),
+                            style = "background-color: #ff8c42; border-color: #ff8c42; color: white; font-size: 0.875rem; padding: 0.375rem 0.75rem; width: 140px;")
+          )
         )
       ),
 
