@@ -26,6 +26,7 @@ Imports:
     ggplot2 (>= 3.4.0),
     featuremsea,
     fmseadatabase,
+    future,
     htmltools,
     tools,
     utils,

@@ -13,6 +13,23 @@
 #' run_featuremsea_app()
 #' }
 run_featuremsea_app <- function(...) {
+  # Configure a parallel backend ONCE per R process. The annotation step
+  # (featuremsea::annotate_feature_table) reuses whatever plan is active, so
+  # setting it here means workers are persistent across requests instead of
+  # being spawned on every call. Only set it when the deployer hasn't already
+  # chosen a plan (default is sequential), so an explicit plan in app.R wins.
+  # On a Linux/macOS Shiny server, multicore (fork) avoids the process-startup
+  # and data-serialization overhead of multisession; supportsMulticore() is
+  # FALSE on Windows/RStudio, where we fall back to multisession.
+  if (inherits(future::plan(), "sequential")) {
+    n_workers <- max(1, future::availableCores() - 1)
+    if (future::supportsMulticore()) {
+      future::plan(future::multicore, workers = n_workers)
+    } else {
+      future::plan(future::multisession, workers = n_workers)
+    }
+  }
+
   # File upload is now handled by fileInput() - no need for volumes
 
   # Serve static assets (logo, etc.) from inst/www
