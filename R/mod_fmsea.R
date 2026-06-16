@@ -279,6 +279,7 @@ fmsea_server <- function(id) {
       ranking_table = NULL,
       annotation_table = NULL,
       leading_edge_table = NULL,
+      db_type = NULL,
       feature_table_file_path = NULL,
       results_rda_file_path = NULL,
       llm_evaluated_result = NULL,
@@ -796,6 +797,10 @@ fmsea_server <- function(id) {
         local_db_type <- "KEGG"  # 默认值
       }
 
+      # 记录本次 Step 1 实际使用的数据库类型，供 Step 2 复用，
+      # 避免用户在两步之间改动下拉框导致 Step 2 用错 id.col
+      vals$db_type <- local_db_type
+
       # 使用 withProgress 显示进度条 + 模态对话框
       withProgress(message = 'Step 1 Progress', value = 0, {
 
@@ -860,7 +865,7 @@ fmsea_server <- function(id) {
 
     # --- Analysis: Step 2 ---
     observeEvent(input$run_step2, {
-      req(vals$ranking_table, vals$annotation_table, input$pathway_database)
+      req(vals$ranking_table, vals$annotation_table, vals$db_type, input$pathway_database)
 
       # 显示模态对话框
       showModal(modalDialog(
@@ -897,13 +902,28 @@ fmsea_server <- function(id) {
       l_max_iter_num <- as.numeric(input$max_iter_num)
       l_fdr_thr <- as.numeric(input$fdr_thr)
 
-      # 根据选择的 MS1 数据库确定数据库类型
-      if (grepl("kegg", l_ms1_db, ignore.case = TRUE)) {
-        l_db_type <- "KEGG"
+      # 复用 Step 1 实际使用的数据库类型，而不是重新读取当前下拉框的值：
+      # vals$annotation_table / vals$ranking_table 的列名（KEGG_ID / HMDB_ID）
+      # 是按 Step 1 运行时的数据库类型生成的，如果用户在两步之间改动了
+      # ms1_database 下拉框，这里用当前值会导致 id.col 与实际表结构不匹配。
+      l_db_type <- vals$db_type
+
+      # 如果当前下拉框的选择已经和 Step 1 时不一致，提醒用户：Step 2 仍按
+      # Step 1 的数据库类型运行（除非重新运行 Step 1）
+      current_db_type <- if (grepl("kegg", l_ms1_db, ignore.case = TRUE)) {
+        "KEGG"
       } else if (grepl("hmdb", l_ms1_db, ignore.case = TRUE)) {
-        l_db_type <- "HMDB"
+        "HMDB"
       } else {
-        l_db_type <- "KEGG"  # 默认值
+        "KEGG"
+      }
+      if (current_db_type != l_db_type) {
+        showNotification(
+          paste0("Note: MS1 database selection changed since Step 1 ran. ",
+                 "Step 2 will use the '", l_db_type, "' annotation from Step 1. ",
+                 "Re-run Step 1 if you want to switch databases."),
+          type = "warning", duration = 8
+        )
       }
 
       withProgress(message = 'Step 2 Progress', value = 0, {
@@ -945,7 +965,15 @@ fmsea_server <- function(id) {
 
             # 使用分析时确定的数据库类型
             id_col_to_use <- ifelse(l_db_type == "KEGG", "KEGG_ID", "HMDB_ID")
-            vals$leading_edge_table <- featuremsea::get_leading_edge_scores(vals$final_result, id_col = id_col_to_use)
+            # 必须传入用户在 Step 2 设置的 FDR 阈值，否则 get_leading_edge_scores()
+            # 会用自己的默认值（0.05）重新筛选显著通路，与 perform_fmsea_analysis()
+            # 实际使用的 fdr.thr 不一致，导致 Annotation Table 漏掉部分
+            # 已经判定为显著（在 significant_modules / 图中可见）的通路的 leading edge
+            vals$leading_edge_table <- featuremsea::get_leading_edge_scores(
+              vals$final_result,
+              id_col = id_col_to_use,
+              fdr_threshold = l_fdr_thr
+            )
           }, error = function(e) {
             vals$leading_edge_table <- data.frame(
               Error = "Generation Failed",
