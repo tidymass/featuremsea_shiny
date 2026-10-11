@@ -81,12 +81,14 @@ run_featuremsea_app()
 
 ### Input Data Format
 
-Your feature table should contain at least:
+Your feature table should contain the following columns:
 
-- Feature identifiers
-- Mass-to-charge ratios (m/z)
-- Retention times
-- Intensity or abundance data
+- `variable_id`: Unique feature identifier
+- `mz`: Mass-to-charge ratio (m/z)
+- `rt`: Retention time (in seconds)
+- `ranking_statistic`: Phenotype-associated ranking statistic (e.g., SNR, log2FC or r). It can be signed or absolute; features are ranked in descending order by its absolute value, and the sign, if provided, is only used to indicate direction in the enrichment plots. A column named `condition` (the name used in earlier versions) is still accepted.
+- `polarity`: `"positive"` or `"negative"`
+- `mean_intensity`: Average feature intensity across all samples
 
 ## Example
 

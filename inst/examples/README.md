@@ -6,21 +6,22 @@ This directory can contain example datasets for testing the featureMSEA applicat
 
 ### Feature Table Format
 
-Your feature table should be in CSV format with the following columns:
+Your feature table should be in CSV or RDA format with the following columns:
 
-- **feature_id**: Unique identifier for each feature
+- **variable_id**: Unique identifier for each feature
 - **mz**: Mass-to-charge ratio
 - **rt**: Retention time (in seconds)
-- **intensity**: Feature intensity or abundance
-- Additional sample columns as needed
+- **ranking_statistic**: Phenotype-associated ranking statistic, i.e., an effect-size measure such as signal-to-noise ratio (SNR), fold change (log2FC) or correlation coefficient (r). It can be signed or absolute; features are ranked in descending order by its absolute value, and the sign, if provided, is only used to indicate direction in the enrichment plots. A column named `condition` (the name used in earlier versions) is still accepted.
+- **polarity**: Ionization mode, either `"positive"` or `"negative"`
+- **mean_intensity**: Average feature intensity across all samples
 
 ### Example CSV Structure
 
 ```csv
-feature_id,mz,rt,intensity_sample1,intensity_sample2,intensity_sample3
-M001,100.0523,120.5,15678.2,23456.8,19876.5
-M002,150.0876,245.8,8765.1,12345.6,9876.4
-M003,200.1234,380.2,45678.9,34567.8,39876.2
+variable_id,mz,rt,ranking_statistic,polarity,mean_intensity
+M71T824_POS,70.98033666,823.5647888,0.013196571,positive,188792051.4
+M72T823_POS,71.98741136,823.2585144,0.042634569,positive,15481940.67
+M72T34_POS,72.08081529,33.85064888,-0.086349183,positive,4751415.57
 ```
 
 ## Usage in Application

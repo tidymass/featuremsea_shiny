@@ -1,4 +1,4 @@
-variable_id,mz,rt,condition,polarity,mean_intensity
+variable_id,mz,rt,ranking_statistic,polarity,mean_intensity
 M71T824_POS,70.98033666,823.5647888,0.013196571,positive,188792051.4
 M72T823_POS,71.98741136,823.2585144,0.042634569,positive,15481940.67
 M72T34_POS,72.08081529,33.85064888,-0.086349183,positive,4751415.57
